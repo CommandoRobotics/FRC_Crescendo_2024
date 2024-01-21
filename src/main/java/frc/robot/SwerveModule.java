@@ -40,16 +40,18 @@ public class SwerveModule implements Sendable {
   //private final Encoder m_turningEncoder;
   private RelativeEncoder m_driveEncoder;
   private final CANcoder m_turningAbsoluteEncoder;
+  private final double m_turningEncoderOffset;
+  private double m_desiredRadians;
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
+  private final PIDController m_drivePIDController = new PIDController(.5, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          1,
-          0,
-          0,
+          .5,
+          0.1,
+          0.2,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
@@ -67,11 +69,15 @@ public class SwerveModule implements Sendable {
   public SwerveModule(
       int driveMotorChannel,
       int turningMotorChannel,
-      int turningEncoderID) {
+      int turningEncoderID,
+      double turningEncoderOffset) {
     m_driveMotor = new CANSparkMax(driveMotorChannel, MotorType.kBrushless);
     m_driveEncoder = m_driveMotor.getEncoder();
     m_turningMotor = new CANSparkMax(turningMotorChannel, MotorType.kBrushless);
     m_turningAbsoluteEncoder = new CANcoder(turningEncoderID);
+    m_turningEncoderOffset = turningEncoderOffset;
+    m_turningAbsoluteEncoder.setPosition(m_turningEncoderOffset);
+    m_desiredRadians = 0.0;
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
@@ -87,7 +93,7 @@ public class SwerveModule implements Sendable {
     double speedInRevolutionsPerMinute = m_driveEncoder.getVelocity();
     double speedInMetersPerMinute = kWheelCircumferanceInMeters * speedInRevolutionsPerMinute;
     double speedinMetersPerSecond = speedInMetersPerMinute / 60.0; // 60 seconds in a minute
-    return new SwerveModuleState(speedinMetersPerSecond, new Rotation2d(m_turningAbsoluteEncoder.getAbsolutePosition().getValueAsDouble()));
+    return new SwerveModuleState(speedinMetersPerSecond, new Rotation2d(getTurningAdjustedPosition()));
   }
 
   /**
@@ -97,7 +103,7 @@ public class SwerveModule implements Sendable {
    */
   public SwerveModulePosition getPosition() {
     double accumulatedDistanceInMeters = m_driveEncoder.getPosition() * kWheelCircumferanceInMeters; // Total turns of the wheel times wheel circumferance.
-    return new SwerveModulePosition(accumulatedDistanceInMeters, new Rotation2d(m_turningAbsoluteEncoder.getAbsolutePosition().getValueAsDouble()));
+    return new SwerveModulePosition(accumulatedDistanceInMeters, new Rotation2d(getTurningAdjustedPosition()));
   }
 
   /**
@@ -128,19 +134,32 @@ public class SwerveModule implements Sendable {
     final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
 
     // Calculate the turning motor output from the turning PID controller.
-    double rawRotation = m_turningAbsoluteEncoder.getAbsolutePosition().getValueAsDouble(); // Value is percent rotation (-0.5 to .999)
-    double rotationInRadians = rawRotation * 2 * Math.PI;
+    double rotationInRadians = getTurningAdjustedPosition() * 2 * Math.PI;
+    m_desiredRadians = state.angle.getRadians();
     final double turnOutput = m_turningPIDController.calculate(rotationInRadians, state.angle.getRadians());
 
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.setVoltage(driveOutput + driveFeedforward);
-    m_turningMotor.setVoltage(turnOutput + turnFeedforward);
+    m_driveMotor.setVoltage(0);
+    //m_driveMotor.setVoltage(driveOutput + driveFeedforward);
+    double totalTurnVoltage = turnOutput;
+    if (totalTurnVoltage < 0.5) {
+      totalTurnVoltage = 0;
+    }
+    m_turningMotor.setVoltage(totalTurnVoltage);
   }
 
-  public double getRotation() {
+  public double getTurningAbsoluteRotation() {
     return m_turningAbsoluteEncoder.getAbsolutePosition().getValueAsDouble();
+  }
+
+  public double getTurningAdjustedPosition() {
+    return m_turningEncoderOffset + getTurningAbsoluteRotation();
+  }
+
+  public double getTurningAdjustedRadians() {
+    return getTurningAdjustedPosition() * 2 * Math.PI;
   }
 
   public double getMetersDriven() {
@@ -151,12 +170,18 @@ public class SwerveModule implements Sendable {
     return m_driveEncoder.getVelocity();
   }
 
+  public double getDesiredRadians() {
+    return m_desiredRadians;
+  }
+
   @Override
   public void initSendable(SendableBuilder builder) {
     builder.setSmartDashboardType("SwerveModule");
-    builder.addDoubleProperty("rotationPosition", this::getRotation, null);
     builder.addDoubleProperty("drivePosition", this::getMetersDriven, null);
     builder.addDoubleProperty("driveSpeed", this::getSpeed, null);
+    builder.addDoubleProperty("rotationAbsolutePosition", this::getTurningAbsoluteRotation, null);
+    builder.addDoubleProperty("rotationAdjustedRadians", this::getTurningAdjustedRadians, null);
+    builder.addDoubleProperty("rotationDesiredRadians", this::getDesiredRadians, null);
     
   }
 }

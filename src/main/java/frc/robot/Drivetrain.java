@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -11,23 +12,29 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
+
+import edu.wpi.first.wpilibj.SPI;
+import com.kauailabs.navx.frc.AHRS;
+
 
 /** Represents a swerve drive style drivetrain. */
-public class Drivetrain {
+public class Drivetrain implements Sendable {
   public static final double kMaxSpeed = 3.0; // 3 meters per second
   public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 
-  private final Translation2d m_frontLeftLocation = new Translation2d(0.381, 0.381);
-  private final Translation2d m_frontRightLocation = new Translation2d(0.381, -0.381);
-  private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
-  private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
+  private final Translation2d m_frontLeftLocation = new Translation2d(0.311, 0.311);
+  private final Translation2d m_frontRightLocation = new Translation2d(0.311, -0.311);
+  private final Translation2d m_backLeftLocation = new Translation2d(-0.311, 0.311);
+  private final Translation2d m_backRightLocation = new Translation2d(-0.311, -0.311);
 
-  private final SwerveModule m_frontLeft = new SwerveModule(1, 2, 11);
-  private final SwerveModule m_frontRight = new SwerveModule(3, 4, 12);
-  private final SwerveModule m_backLeft = new SwerveModule(5, 6, 13);
-  private final SwerveModule m_backRight = new SwerveModule(7, 8, 14);
+  private final SwerveModule m_frontLeft = new SwerveModule(2, 3, 11, 0.268);
+  private final SwerveModule m_frontRight = new SwerveModule(4, 5, 12, 0.461);
+  private final SwerveModule m_backLeft = new SwerveModule(6, 7, 13, 0.226);
+  private final SwerveModule m_backRight = new SwerveModule(8, 9, 14, -0.254);
 
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
+  private final AHRS m_navXMXP = new AHRS(SPI.Port.kMXP);
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
@@ -36,7 +43,7 @@ public class Drivetrain {
   private final SwerveDriveOdometry m_odometry =
       new SwerveDriveOdometry(
           m_kinematics,
-          m_gyro.getRotation2d(),
+          new Rotation2d(m_navXMXP.getAngle()),
           new SwerveModulePosition[] {
             m_frontLeft.getPosition(),
             m_frontRight.getPosition(),
@@ -45,11 +52,20 @@ public class Drivetrain {
           });
 
   public Drivetrain() {
-    m_gyro.reset();
+    m_navXMXP.reset();
     SmartDashboard.putData("FLSwerve", m_frontLeft);
     SmartDashboard.putData("FRSwerve", m_frontRight);
     SmartDashboard.putData("BLSwerve", m_backLeft);
     SmartDashboard.putData("BRSwerve", m_backRight);
+    SmartDashboard.putData("MyDrivetrain", this);
+  }
+
+  private double getGyroAngle() {
+    return m_navXMXP.getAngle();
+  }
+
+  private Rotation2d getGyroRotation2d() {
+    return new Rotation2d(getGyroAngle());
   }
 
   /**
@@ -67,7 +83,7 @@ public class Drivetrain {
             ChassisSpeeds.discretize(
                 fieldRelative
                     ? ChassisSpeeds.fromFieldRelativeSpeeds(
-                        xSpeed, ySpeed, rot, m_gyro.getRotation2d())
+                        xSpeed, ySpeed, rot, getGyroRotation2d())
                     : new ChassisSpeeds(xSpeed, ySpeed, rot),
                 periodSeconds));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
@@ -80,7 +96,7 @@ public class Drivetrain {
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
     m_odometry.update(
-        m_gyro.getRotation2d(),
+        getGyroRotation2d(),
         new SwerveModulePosition[] {
           m_frontLeft.getPosition(),
           m_frontRight.getPosition(),
@@ -88,4 +104,11 @@ public class Drivetrain {
           m_backRight.getPosition()
         });
   }
+
+   @Override
+  public void initSendable(SendableBuilder builder) {
+    builder.setSmartDashboardType("TheDrivetrain");
+    builder.addDoubleProperty("CurrentAngle", this::getGyroAngle, null);
+  }
+
 }
