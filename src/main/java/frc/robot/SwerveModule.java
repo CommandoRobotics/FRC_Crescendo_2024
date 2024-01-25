@@ -18,6 +18,8 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 
+import java.io.IOException;
+
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.CANSparkMax;
@@ -42,6 +44,9 @@ public class SwerveModule implements Sendable {
   private final CANcoder m_turningAbsoluteEncoder;
   private final double m_turningEncoderOffset;
   private double m_desiredRadians;
+
+  private double m_accumulatedTestTime;
+  private int m_currentTestStep;
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final PIDController m_drivePIDController = new PIDController(.5, 0, 0);
@@ -78,6 +83,8 @@ public class SwerveModule implements Sendable {
     m_turningEncoderOffset = turningEncoderOffset;
     m_turningAbsoluteEncoder.setPosition(m_turningEncoderOffset);
     m_desiredRadians = 0.0;
+    m_accumulatedTestTime = 0.0;
+    m_currentTestStep = 0;
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
@@ -96,6 +103,49 @@ public class SwerveModule implements Sendable {
   public SwerveModulePosition getPosition() {
     double accumulatedDistanceInMeters = m_driveEncoder.getPosition() * kWheelCircumferanceInMeters; // Total turns of the wheel times wheel circumferance.
     return new SwerveModulePosition(accumulatedDistanceInMeters, new Rotation2d(getTurningAdjustedPosition()));
+  }
+
+  public void runMotorTest(double timeSinceLastCall) {
+    m_accumulatedTestTime += timeSinceLastCall;
+    final double maxDriveVoltage = 10.0;
+    final double maxTurnVoltage = 5.0;
+    final double totalTesttime = maxDriveVoltage + maxTurnVoltage;
+    if (m_accumulatedTestTime >= totalTesttime) {
+      m_accumulatedTestTime = 0.0;
+    }
+    if (m_accumulatedTestTime < maxDriveVoltage) {
+      m_turningMotor.setVoltage(0.0);
+      m_driveMotor.setVoltage(m_accumulatedTestTime);
+    } else {
+      m_driveMotor.setVoltage(0.0);
+      m_turningMotor.setVoltage(m_accumulatedTestTime - maxDriveVoltage);
+    }
+  }
+
+  public void turnToAdjustedZero() {
+    turnToPoint(0.0);
+  }
+
+  public void turnToGyroNorth(double northRotation) {
+    turnToPoint(northRotation);
+  }
+  
+  public void turnToPoint(double targetRotation) {
+    m_driveMotor.setVoltage(0.0);
+
+    var rawRotation = m_turningAbsoluteEncoder.getAbsolutePosition().getValueAsDouble();
+    var adjustedRotation = m_turningEncoderOffset + rawRotation;
+    var normalizedRotation = adjustedRotation;
+    while (normalizedRotation > 1.0) {
+      normalizedRotation -= 1.0;
+    }
+    while (normalizedRotation < 0.0) {
+      normalizedRotation += 1.0;
+    }
+    
+    var deviation = targetRotation - normalizedRotation;
+    double scaler = 1.0;
+    m_turningMotor.setVoltage(deviation * scaler);
   }
 
   /**

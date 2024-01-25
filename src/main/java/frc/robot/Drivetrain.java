@@ -94,6 +94,28 @@ public class Drivetrain implements Sendable {
     m_backRight.setDesiredState(swerveModuleStates[3]);
   }
 
+  public void driveMotorTest(double periodSeconds) {
+    m_frontLeft.runMotorTest(periodSeconds);
+    m_frontRight.runMotorTest(periodSeconds);
+    m_backLeft.runMotorTest(periodSeconds);
+    m_backRight.runMotorTest(periodSeconds);
+  }
+
+  public void turnToZero() {
+    m_frontLeft.turnToAdjustedZero();
+    m_frontRight.turnToAdjustedZero();
+    m_backLeft.turnToAdjustedZero();
+    m_backRight.turnToAdjustedZero();
+  }
+
+  public void turnToGyroNorth() {
+    var gyroAngle = getGyroAngle();
+    m_frontLeft.turnToGyroNorth(gyroAngle);
+    m_frontRight.turnToGyroNorth(gyroAngle);
+    m_backLeft.turnToGyroNorth(gyroAngle);
+    m_backRight.turnToGyroNorth(gyroAngle);
+  }
+
   // Use the WPILib algorithms to guess where we are/will be.
   // This takes in the current state of each Swerve module, and
   // uses Dead Reckoning. This means it guess where we are based on how fast our motors are going, and
