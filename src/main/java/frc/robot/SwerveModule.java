@@ -84,11 +84,7 @@ public class SwerveModule implements Sendable {
     m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
-  /**
-   * Returns the current state of the module.
-   *
-   * @return The current state of the module.
-   */
+  /// Returns the current state of the module (driving speed and rotation position)
   public SwerveModuleState getState() {
     double speedInRevolutionsPerMinute = m_driveEncoder.getVelocity();
     double speedInMetersPerMinute = kWheelCircumferanceInMeters * speedInRevolutionsPerMinute;
@@ -96,11 +92,7 @@ public class SwerveModule implements Sendable {
     return new SwerveModuleState(speedinMetersPerSecond, new Rotation2d(getTurningAdjustedPosition()));
   }
 
-  /**
-   * Returns the current position of the module.
-   *
-   * @return The current position of the module.
-   */
+  // Returns the current
   public SwerveModulePosition getPosition() {
     double accumulatedDistanceInMeters = m_driveEncoder.getPosition() * kWheelCircumferanceInMeters; // Total turns of the wheel times wheel circumferance.
     return new SwerveModulePosition(accumulatedDistanceInMeters, new Rotation2d(getTurningAdjustedPosition()));

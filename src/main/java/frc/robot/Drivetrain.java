@@ -10,7 +10,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -36,9 +35,7 @@ public class Drivetrain implements Sendable {
 
   private final AHRS m_navXMXP = new AHRS(SPI.Port.kMXP);
 
-  private final SwerveDriveKinematics m_kinematics =
-      new SwerveDriveKinematics(
-          m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
+  private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
   private final SwerveDriveOdometry m_odometry =
       new SwerveDriveOdometry(
@@ -76,24 +73,33 @@ public class Drivetrain implements Sendable {
    * @param rot Angular rate of the robot.
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
-  public void drive(
-      double xSpeed, double ySpeed, double rot, boolean fieldRelative, double periodSeconds) {
-    var swerveModuleStates =
-        m_kinematics.toSwerveModuleStates(
-            ChassisSpeeds.discretize(
-                fieldRelative
-                    ? ChassisSpeeds.fromFieldRelativeSpeeds(
-                        xSpeed, ySpeed, rot, getGyroRotation2d())
-                    : new ChassisSpeeds(xSpeed, ySpeed, rot),
-                periodSeconds));
+  public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative, double periodSeconds) {
+    // Determine our the speeds (forward, sideways, and rotation) our chassis should move.
+    ChassisSpeeds speedToDrive = new ChassisSpeeds(xSpeed, ySpeed, rot);
+    // If we want to be Field-Oriented drivint, modify these based on the direction orobot is actually pointing.
+    if (fieldRelative) {
+      ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getGyroRotation2d());
+    }
+
+    // Get the speed/rotation each individual Swerve Module needs to drive at.
+    var swerveModuleStates = m_kinematics.toSwerveModuleStates(ChassisSpeeds.discretize(speedToDrive, periodSeconds));
+
+    // Slow down any excessive speeds so it does not try to drive faster than it is capable of.
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
+
+    // Control each swerve module using the unique speeds calculated above.
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
     m_frontRight.setDesiredState(swerveModuleStates[1]);
     m_backLeft.setDesiredState(swerveModuleStates[2]);
     m_backRight.setDesiredState(swerveModuleStates[3]);
   }
 
-  /** Updates the field relative position of the robot. */
+  // Use the WPILib algorithms to guess where we are/will be.
+  // This takes in the current state of each Swerve module, and
+  // uses Dead Reckoning. This means it guess where we are based on how fast our motors are going, and
+  // how long since the last time we updated that information.
+  // For example, if all our motors were pointing North and at 1 foot per second, and we last called this
+  // one half second ago, the algorithm would assume our point on the map moved half a foot North (i.e. 1ft/s x 0.5s = 0.5ft).
   public void updateOdometry() {
     m_odometry.update(
         getGyroRotation2d(),
@@ -105,10 +111,12 @@ public class Drivetrain implements Sendable {
         });
   }
 
-   @Override
+  // This function allows the SmartDashboard to see our class as "Sendable".
+  // The values in this function will be regularly updated by the SmartDashboard so we can view them while driving/testing.
+  @Override
   public void initSendable(SendableBuilder builder) {
     builder.setSmartDashboardType("TheDrivetrain");
-    builder.addDoubleProperty("CurrentAngle", this::getGyroAngle, null);
+    builder.addDoubleProperty("gyroAngle", this::getGyroAngle, null);
   }
 
 }
