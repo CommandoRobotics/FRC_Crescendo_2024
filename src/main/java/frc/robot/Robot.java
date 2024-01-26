@@ -4,12 +4,9 @@
 
 package frc.robot;
 
-import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -18,16 +15,12 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
  * directory.
  */
 public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
-  private final DifferentialDrive m_robotDrive =
-      new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
+  private Dispenser m_dispenser;
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
 
   public Robot() {
-    SendableRegistry.addChild(m_robotDrive, m_leftDrive);
-    SendableRegistry.addChild(m_robotDrive, m_rightDrive);
+    m_dispenser = new Dispenser();
   }
 
   /**
@@ -36,10 +29,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
-    m_rightDrive.setInverted(true);
+    m_dispenser.stop();
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -51,13 +41,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    // Drive for 2 seconds
-    if (m_timer.get() < 2.0) {
-      // Drive forwards half speed, make sure to turn input squaring off
-      m_robotDrive.arcadeDrive(0.5, 0.0, false);
-    } else {
-      m_robotDrive.stopMotor(); // stop robot
-    }
+    // Run the intake and shooter at full speed so we can practice our shots.
+    m_dispenser.shootNoteImmediately();
+
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
@@ -67,7 +53,19 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    // Y is shoot.
+    if (m_controller.getYButtonPressed()) {
+      m_dispenser.shootNoteImmediately();
+    // X is intake
+    } else if (m_controller.getXButtonPressed()) {
+      m_dispenser.intakeNote();
+    // B is spin motors (without shooting)
+    } else if (m_controller.getBButtonPressed()) {
+      m_dispenser.spinUpShooterWheels();
+    // Stop the motors if none of the buttons are pressed.
+    } else {
+      m_dispenser.stop();
+    }
   }
 
   /** This function is called once each time the robot enters test mode. */
