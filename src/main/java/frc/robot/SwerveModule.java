@@ -144,6 +144,12 @@ public class SwerveModule implements Sendable {
     }
     
     var deviation = targetRotation - normalizedRotation;
+    // If we are more than half way around, it is closer to turn the other direction.
+    if (deviation > 0.5) {
+      deviation -= 1.0;
+    } else if (deviation < -0.5) {
+      deviation += 1.0;
+    }
     double scaler = 1.0;
     m_turningMotor.setVoltage(deviation * scaler);
   }
