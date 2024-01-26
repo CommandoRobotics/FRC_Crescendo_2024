@@ -81,7 +81,7 @@ public class SwerveModule implements Sendable {
     m_turningMotor = new CANSparkMax(turningMotorChannel, MotorType.kBrushless);
     m_turningAbsoluteEncoder = new CANcoder(turningEncoderID);
     m_turningEncoderOffset = turningEncoderOffset;
-    m_turningAbsoluteEncoder.setPosition(m_turningEncoderOffset);
+    //m_turningAbsoluteEncoder.setPosition(m_turningEncoderOffset);
     m_desiredRadians = 0.0;
     m_accumulatedTestTime = 0.0;
     m_currentTestStep = 0;
@@ -151,7 +151,12 @@ public class SwerveModule implements Sendable {
       deviation += 1.0;
     }
     double scaler = 1.0;
+    var scaledPower = deviation * scaler;
+    if (scaledPower < 0.1) {
+      scaledPower = 0.0;
+    }
     m_turningMotor.setVoltage(deviation * scaler);
+    m_turningMotor.setIdleMode(com.revrobotics.CANSparkBase.IdleMode.kCoast);
   }
 
   /**

@@ -28,10 +28,10 @@ public class Drivetrain implements Sendable {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.311, 0.311);
   private final Translation2d m_backRightLocation = new Translation2d(-0.311, -0.311);
 
-  private final SwerveModule m_frontLeft = new SwerveModule(2, 3, 11, 0.268);
-  private final SwerveModule m_frontRight = new SwerveModule(4, 5, 12, 0.461);
-  private final SwerveModule m_backLeft = new SwerveModule(6, 7, 13, 0.226);
-  private final SwerveModule m_backRight = new SwerveModule(8, 9, 14, -0.254);
+  private final SwerveModule m_frontLeft = new SwerveModule(2, 3, 11, 0.344);
+  private final SwerveModule m_frontRight = new SwerveModule(4, 5, 12, 0.317);
+  private final SwerveModule m_backLeft = new SwerveModule(6, 7, 13, 0.323);
+  private final SwerveModule m_backRight = new SwerveModule(8, 9, 14, 0.43);
 
   private final AHRS m_navXMXP = new AHRS(SPI.Port.kMXP);
 

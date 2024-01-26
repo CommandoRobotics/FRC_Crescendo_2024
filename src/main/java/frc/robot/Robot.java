@@ -26,8 +26,8 @@ public class Robot extends TimedRobot {
   // This is the function the RoboRio will call repeatedly during autonomous.
   @Override
   public void autonomousPeriodic() {
-    m_swerve.driveMotorTest(getPeriod());
-    //m_swerve.turnToZero();
+    //m_swerve.driveMotorTest(getPeriod());
+    m_swerve.turnToZero();
     //m_swerve.turnToGyroNorth();
     
     // Call our authomous program.
