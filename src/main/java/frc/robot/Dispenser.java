@@ -34,8 +34,9 @@ public class Dispenser {
     // can help avoid improper access and prevent bugs in our code.
 
     // Declare all the motors that will be used in this class.
-    private CANSparkMax m_intakeMotor; // Motor controlling the upper roller on the shooter.
-    // TODO: Create variables for the upper shooter motor and the lower shooter motor.
+    private CANSparkMax m_intakeMotor; // Motor controlling the intake rollers.
+    private CANSparkMax m_upperShooterMotor; // Motor controlling the top roller on the shooter.
+    private CANSparkMax m_lowerShooterMotor; // Motor controlling the bottom roller on the shooter.
     
     // This special function is known as the constructor for the class. Notice that the constructor
     // has the EXACT SAME name (including capitalization) as our class' name. Also note that the
@@ -49,7 +50,7 @@ public class Dispenser {
 
         // Set the motors to the appropriate CAN device ID and set the type (brushed or brushless).
         // TODO: Change deviceID 21 to the appropriate CAN ID for our intake motor.
-        m_intakeMotor = new CANSparkMax(21, MotorType.kBrushless);
+        m_intakeMotor = new CANSparkMax(41, MotorType.kBrushless);
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
         m_intakeMotor.setIdleMode(IdleMode.kCoast);
@@ -59,8 +60,13 @@ public class Dispenser {
         // would normally spit the Note out.
         m_intakeMotor.setInverted(true);
 
-        // TODO: Set up the shooter motors. These will be similiar to the intake, but different
-        // CAN IDs and only one will be Inverted since the shooter wheels spin in opposite directions.
+        // Set up shooter motors (see comments above for intake motor for more info).
+        m_upperShooterMotor = new CANSparkMax(51, MotorType.kBrushless);
+        m_upperShooterMotor.setIdleMode(IdleMode.kCoast);
+        m_lowerShooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+        m_lowerShooterMotor.setIdleMode(IdleMode.kCoast);
+        // Bottom shooter motor should turn opposite from top motor so both push the Note in the same direction.
+        m_lowerShooterMotor.setInverted(true);
     }
 
     // This function runs the motors to pull in a Note (but not shoot it yet).
@@ -68,7 +74,8 @@ public class Dispenser {
         // Turn the intake wheels at 50% (0.5) speed.
         m_intakeMotor.set(0.5);
 
-        // TODO: Set the shooter motors to zero speed since we don't want to shoot it yet.
+        m_upperShooterMotor.set(0.0);
+        m_lowerShooterMotor.set(0.0);
     }
 
     // This function turns on all the motors to shoot the Note.
@@ -83,23 +90,28 @@ public class Dispenser {
         // So, set the intake speed to 100%.
         m_intakeMotor.set(1.0);
 
-        // TODO: Set the shooter motors to full speed.
-
+        // Run shooter motors at full speed.
+        m_upperShooterMotor.set(1.0);
+        m_lowerShooterMotor.set(1.0);
     }
 
     // This function runs the shooter motors, while keeping the intake system stopped.
     // Since the shooter motors take some amount of time to get to their max speed, we would run
     // this function before we actually call shootNoteImmediately().
     public void spinUpShooterWheels() {
-        // TODO: Set the intake motor speed to zero, so the Note does not enter the shooter yet.
-        
-        // TODO: Set the shooter motors to full speed.
+        // Set the intake motor speed to zero, so the Note does not enter the shooter yet.
+        m_intakeMotor.set(0.0);
+
+        // Set the shooter motors to full speed.
+        m_upperShooterMotor.set(1.0);
+        m_lowerShooterMotor.set(1.0);
     }
 
     // This function stops all the motors.
     // We'll use this function when have intaken Note, but are not ready to shoot it.
     public void stop() {
         m_intakeMotor.set(0);
-        // TODO: Set the shooter motor speeds to zero.
+        m_upperShooterMotor.set(0);
+        m_lowerShooterMotor.set(0);
     }
 }
