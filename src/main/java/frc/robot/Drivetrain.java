@@ -10,6 +10,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -37,6 +38,8 @@ public class Drivetrain implements Sendable {
 
   private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
+  private double m_accumulatedTestTime;
+
   private final SwerveDriveOdometry m_odometry =
       new SwerveDriveOdometry(
           m_kinematics,
@@ -55,14 +58,17 @@ public class Drivetrain implements Sendable {
     SmartDashboard.putData("BLSwerve", m_backLeft);
     SmartDashboard.putData("BRSwerve", m_backRight);
     SmartDashboard.putData("MyDrivetrain", this);
+    m_accumulatedTestTime = 0.0;
   }
 
-  private double getGyroAngle() {
-    return m_navXMXP.getAngle();
+  // Returns robot angle is -180° to +180°
+  private double getGyroYawInDegrees() {
+    return m_navXMXP.getYaw();
   }
 
   private Rotation2d getGyroRotation2d() {
-    return new Rotation2d(getGyroAngle());
+    double gyroInRadians = getGyroYawInDegrees() / 360.0 * 2 * Math.PI;
+    return new Rotation2d(gyroInRadians);
   }
 
   /**
@@ -101,27 +107,97 @@ public class Drivetrain implements Sendable {
     m_backRight.runMotorTest(periodSeconds);
   }
 
-  public void turnToZero() {
-    m_frontLeft.turnToAdjustedZero();
-    m_frontRight.turnToAdjustedZero();
-    m_backLeft.turnToAdjustedZero();
-    m_backRight.turnToAdjustedZero();
+  public void turnToRawZero() {
+    m_frontLeft.turnToRawZero();
+    m_frontRight.turnToRawZero();
+    m_backLeft.turnToRawZero();
+    m_backRight.turnToRawZero();
+  }
+
+  public void turnToAdjustedZero() {
+    m_frontLeft.testTurnToAdjustedZero();
+    m_frontRight.testTurnToAdjustedZero();
+    m_backLeft.testTurnToAdjustedZero();
+    m_backRight.testTurnToAdjustedZero();
   }
 
   public void turnToGyroNorth() {
-    var gyroAngle = getGyroAngle();
-    m_frontLeft.turnToGyroNorth(gyroAngle);
-    m_frontRight.turnToGyroNorth(gyroAngle);
-    m_backLeft.turnToGyroNorth(gyroAngle);
-    m_backRight.turnToGyroNorth(gyroAngle);
+    var gyroAngle = getGyroYawInDegrees();
+    m_frontLeft.testTurnToDirection(gyroAngle);
+    m_frontRight.testTurnToDirection(gyroAngle);
+    m_backLeft.testTurnToDirection(gyroAngle);
+    m_backRight.testTurnToDirection(gyroAngle);
+  }
+
+  public void driveToGyroNorth() {
+    double desiredSpeedInMetersPerSecond = 0.5;
+    SwerveModuleState desiredState = new SwerveModuleState(desiredSpeedInMetersPerSecond, getGyroRotation2d());
+    driveAllSameState(desiredState);
+  }
+
+  public void driveAllSameState(SwerveModuleState desiredState) {
+    m_frontLeft.setDesiredState(desiredState);
+    m_frontRight.setDesiredState(desiredState);
+    m_backLeft.setDesiredState(desiredState);
+    m_backRight.setDesiredState(desiredState);
+  }
+
+  public void driveInSquare(double periodSeconds) {
+    final double driveSideInSeconds = 3.0;
+    final double turningPauseInSeconds = 2.0;
+    // Determine the time it takes to get to each point (used later)
+    final double firstLegComplete = driveSideInSeconds;
+    final double firstTurnComplete = firstLegComplete + turningPauseInSeconds;
+    final double secondLegComplete = firstTurnComplete + driveSideInSeconds;
+    final double secondTurnComplete = secondLegComplete + turningPauseInSeconds;
+    final double thirdLegComplete = secondTurnComplete + driveSideInSeconds;
+    final double thirdTurnComplete = thirdLegComplete + turningPauseInSeconds;
+    final double fourthLegComplete = thirdTurnComplete + driveSideInSeconds;
+    final double fourthTurnComplete = fourthLegComplete + turningPauseInSeconds;
+    final double driveSpeedInMetersPerSecond = 0.5;
+    final double quarterRotationInRadians = 2 * Math.PI / 4;
+    // If the timer has gone longer than one test, reset the timer.
+    m_accumulatedTestTime += periodSeconds;
+    while (m_accumulatedTestTime > fourthTurnComplete) {
+      m_accumulatedTestTime -= fourthTurnComplete;
+    }
+    if (m_accumulatedTestTime < firstLegComplete) {
+      // Drive forward
+      driveAllSameState(new SwerveModuleState(driveSpeedInMetersPerSecond, new Rotation2d(0 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < firstTurnComplete) {
+      // Rotate wheels left
+      driveAllSameState(new SwerveModuleState(0.0, new Rotation2d(1 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < secondLegComplete) {
+      // Drive left
+      driveAllSameState(new SwerveModuleState(driveSpeedInMetersPerSecond, new Rotation2d(1 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < secondTurnComplete) {
+      // Rotate wheels backwards
+      driveAllSameState(new SwerveModuleState(0.0, new Rotation2d(2 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < thirdLegComplete) {
+      // Drive backwards
+      driveAllSameState(new SwerveModuleState(driveSpeedInMetersPerSecond, new Rotation2d(2 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < thirdTurnComplete) {
+      // Rotate wheels right
+      driveAllSameState(new SwerveModuleState(0.0, new Rotation2d(3 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < fourthLegComplete) {
+      // Drive right
+      driveAllSameState(new SwerveModuleState(driveSpeedInMetersPerSecond, new Rotation2d(2 * quarterRotationInRadians)));
+    } else if (m_accumulatedTestTime < fourthTurnComplete) {
+      // Rotate wheels forward
+      driveAllSameState(new SwerveModuleState(0.0, new Rotation2d(0 * quarterRotationInRadians)));
+    } else {
+      // Hmm... shouldn't have made it here. Just stop.
+      driveAllSameState(new SwerveModuleState(0.0, new Rotation2d(0.0)));
+    }
   }
 
   // Use the WPILib algorithms to guess where we are/will be.
-  // This takes in the current state of each Swerve module, and
-  // uses Dead Reckoning. This means it guess where we are based on how fast our motors are going, and
+  // This takes in the current state of each Swerve module, and uses Dead Reckoning.
+  // This means it guesses where we are based on how fast our motors are going, and
   // how long since the last time we updated that information.
-  // For example, if all our motors were pointing North and at 1 foot per second, and we last called this
-  // one half second ago, the algorithm would assume our point on the map moved half a foot North (i.e. 1ft/s x 0.5s = 0.5ft).
+  // For example, if all our motors were pointing North and at 1 foot per second,
+  // and we last called this one half second ago, the algorithm would assume our
+  // point on the map moved half a foot North (i.e. 1ft/s x 0.5s = 0.5ft).
   public void updateOdometry() {
     m_odometry.update(
         getGyroRotation2d(),
@@ -138,7 +214,7 @@ public class Drivetrain implements Sendable {
   @Override
   public void initSendable(SendableBuilder builder) {
     builder.setSmartDashboardType("TheDrivetrain");
-    builder.addDoubleProperty("gyroAngle", this::getGyroAngle, null);
+    builder.addDoubleProperty("gyroYawDegrees", this::getGyroYawInDegrees, null);
   }
 
 }

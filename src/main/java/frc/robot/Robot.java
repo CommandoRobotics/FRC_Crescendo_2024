@@ -27,15 +27,14 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     //m_swerve.driveMotorTest(getPeriod());
-    m_swerve.turnToZero();
-    //m_swerve.turnToGyroNorth();
+    //m_swerve.turnToRawZero();
+    //m_swerve.turnToAdjustedZero();
+    m_swerve.turnToGyroNorth();
+    //m_swerve.driveInSquare(getPeriod());
+    //m_swerve.drive(0.0, 0.5, 0.0, true, getPeriod());
 
-    // Test comment
-    
-    // Call our authomous program.
-    //autonDriveForward();
     // Update where we think we are on the field.
-    //m_swerve.updateOdometry();
+    m_swerve.updateOdometry();
   }
 
   // This is the function the RoboRio will call repeatedly during teleop.
