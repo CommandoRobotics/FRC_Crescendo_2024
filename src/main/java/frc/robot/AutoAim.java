@@ -9,7 +9,7 @@ import frc.robot.Constants;
 
 public class AutoAim implements Sendable {
 
-     double[] limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose>").getDoubleArray(new double[6]);
+     double[] limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose").getDoubleArray(new double[6]);
 
 
 
@@ -38,7 +38,7 @@ public class AutoAim implements Sendable {
        double initXPos = getLastX();
        double initYPos = getLastY();
        double desiredYaw = Math.atan(initYPos/initXPos);
-        return 0.0;
+        return desiredYaw;
     }
 
     public double getDesiredShooterAngleInDegrees(){
