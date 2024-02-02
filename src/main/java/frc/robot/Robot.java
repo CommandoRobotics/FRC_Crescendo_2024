@@ -4,12 +4,19 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -17,17 +24,30 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
  * the package after creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
-  private final DifferentialDrive m_robotDrive =
-      new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
+public class Robot extends TimedRobot
+ {
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
 
+  private final AutoAim m_aim = new AutoAim();
+
+  // Used for simulation
+  private double m_simulatedX; // Simulated X position (meters forward) on the field.
+  private double m_simulatedY; // Simulated Y position (meters left of far right) on the field.
+  private Rotation2d m_simulatedYaw; // Simulated Rotation of the robot
+  private boolean m_driveForward; // Retains the forward/backwards direction of the robot during simulation.
+  private boolean m_driveLeft; // Retains the forward/backwards direction of the robot during simulation.
+  // Used by simulation to determine robot position and direction.
+  private final Field2d m_field = new Field2d();
+  // Used by simulation to pretend to be limelight and write datas over the network that AutoAim will read.
+  NetworkTableEntry limelightBotPose = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose");
+
   public Robot() {
-    SendableRegistry.addChild(m_robotDrive, m_leftDrive);
-    SendableRegistry.addChild(m_robotDrive, m_rightDrive);
+    m_simulatedX = 5.0;
+    m_simulatedY = 5.0;
+    m_driveForward = true;
+    m_driveLeft = true;
+    m_simulatedYaw = new Rotation2d(0);
   }
 
   /**
@@ -36,10 +56,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
-    m_rightDrive.setInverted(true);
+    super.robotInit();
+    
+    // Push Field2d to SmartDashboard.
+    SmartDashboard.putData("Field", m_field);
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -51,13 +71,51 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    // Drive for 2 seconds
-    if (m_timer.get() < 2.0) {
-      // Drive forwards half speed, make sure to turn input squaring off
-      m_robotDrive.arcadeDrive(0.5, 0.0, false);
-    } else {
-      m_robotDrive.stopMotor(); // stop robot
+    // Simulates the robot driving around somewhat randomly
+    final double robotSpeedInMetersPerSecond = 0.5;
+    double distanceTraveled = robotSpeedInMetersPerSecond * getPeriod();
+
+    // Handle driving in X (forward) direction
+    // Determine if the robot should turn the other way.
+    if (m_simulatedX <= 1.0) {
+      // Too close to driver station.
+      m_driveForward = true;
+    } else if (m_simulatedX >= 10.0) {
+      // Driving far from goal.
+      m_driveForward = false;
     }
+    // Add the amount of distance traveled to our simulated X position.
+    if (m_driveForward) {
+        m_simulatedX += distanceTraveled;
+    } else {
+      m_simulatedX -= distanceTraveled;
+    }
+
+    // Handle driving in Y (left) direction
+    // Determine if the robot should turn the other way.
+    if (m_simulatedY <= 0.5) {
+      // Too close to driver station.
+      m_driveLeft = true;
+    } else if (m_simulatedY >= 7.0) {
+      // Driving far from goal.
+      m_driveLeft = false;
+    }
+    // Add the amount of distance traveled to our simulated X position.
+    if (m_driveLeft) {
+        m_simulatedY += distanceTraveled;
+    } else {
+      m_simulatedY -= distanceTraveled;
+    }
+
+    // Send our current information to the network.
+    writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
+    
+    // Determine where the AutoAim thinks we should point.
+    m_aim.update();
+    m_simulatedYaw = Rotation2d.fromRadians(m_aim.getDesiredYawInDegrees());
+
+    // Update the simluation with our new position.
+    m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
@@ -67,7 +125,21 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    final double driveScalar = 0.05;
+    // Swap X and Y on XBox Joystick
+    m_simulatedX -= m_controller.getLeftY() * driveScalar;
+    //
+    m_simulatedY -= m_controller.getLeftX()* driveScalar;
+
+    // Send our current information to the network.
+    writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
+    
+    // Determine where the AutoAim thinks we should point.
+    m_aim.update();
+    m_simulatedYaw  = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegrees());
+
+    // Update the simluation with our new position.
+    m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
   }
 
   /** This function is called once each time the robot enters test mode. */
@@ -77,4 +149,10 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
+
+  private void writeFakeLimelightData(double x, double y, double rotationInDegrees) {
+    double[] pose = { m_simulatedX, m_simulatedY, 0, 0, 0, m_simulatedYaw.getDegrees() };
+    limelightBotPose.setDoubleArray(pose);
+  }
+
 }
