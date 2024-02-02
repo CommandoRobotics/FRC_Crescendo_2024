@@ -169,7 +169,7 @@ public class SwerveModule implements Sendable {
         speed = 0.1;
       }
       //m_turningMotor.set(speed);
-      m_turningMotor.setVoltage(speed*12.0);
+      m_turningMotor.setVoltage(speed*4.0);
     }
   }
 
