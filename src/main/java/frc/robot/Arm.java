@@ -7,6 +7,9 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 // The imports include classes from various code libraries.
 // They contain prewritten code we can use to make our job easier.
 // The order does not affect the program, but we usually place the libraries from WPI first,
@@ -15,6 +18,11 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -27,13 +35,27 @@ import com.revrobotics.SparkLimitSwitch;
 
 // This class controls the internal electronics of the arm as well as providing
 // an interface for controlling it.
-public class Arm {
+public class Arm implements Sendable {
     // Declare all the motors that will be used in this class.
     private CANSparkMax m_leftMotor; // Left side when you are looking toward the front of the robot.
     private CANSparkMax m_rightMotor; // Right side when you are looking toward the front of the robot.
+    
+    // Declare the Encoder
     private DutyCycleEncoder m_hexBoreEncoder; // This is on the hex shaft of the arm.
-    private final double m_encoderOffsetInRotations = 0.0; // Where the encoder actually reads when the arm is at zero degrees.
-    private double m_setPointInDegrees; // Position the intake should move to/hold.
+    private final Rotation2d m_encoderOffset = Rotation2d.fromRotations(0.0); // TODO: Determine actual encoddr offset.
+    private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
+
+    private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
+
+    // The following is just for simulation and debugging
+    private SingleJointedArmSim m_simulatedArm;
+    private final double armLengthInMeters = 1.0; // TDOD: Update this with correct length.
+    private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
+    private final double ammReduction = 5 * 3 * 6; // 3 stage of 5:1 and a 6:1 chain reduction.
+    private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
+    private final Rotation2d maxPosition = Rotation2d.fromDegrees(135);
+    private DutyCycleEncoderSim m_simulatedEncoder;
+    private double m_debugginLastPIDOutput;
 
     // Constructor
     public Arm() {
@@ -43,91 +65,90 @@ public class Arm {
         m_rightMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setInverted(true);
         m_hexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
-        m_setPointInDegrees = 0.0;
+        m_desiredAngle = Rotation2d.fromDegrees(0.0);
+
+        m_simulatedArm = new SingleJointedArmSim(
+            DCMotor.getNEO(2),
+            ammReduction,
+            SingleJointedArmSim.estimateMOI(armLengthInMeters, armMassInKilograms),
+            armLengthInMeters,
+            minPosition.getRadians(),
+            maxPosition.getRadians(),
+            true,
+            minPosition.getRadians()
+        );
+        m_simulatedEncoder = new DutyCycleEncoderSim(m_hexBoreEncoder);
+        m_debugginLastPIDOutput = 0.0;
     }
 
     // Call this if you want to manually control the arm motors.
     // Positive percentage is rotation from intake position (horiontal) to shooting (upright).
     // Percentage should be from -1.0 to +1.0.
     // DO NOT use autoControl and manual control at the same time.
-    public void manuallyControlArm(double motorPercent) {
-        m_leftMotor.set(motorPercent);
-        m_rightMotor.set(motorPercent);
-    }
+    // public void manuallyControlArm(double motorPercent) {
+    //     m_leftMotor.set(motorPercent);
+    //     m_rightMotor.set(motorPercent);
+    // }
 
     // Sets the target position of the Arm.
     // Arm in the intaking position (horizontal) is considered 0 degrees.
     public void setAngleInDegrees(double angleInDegrees) {
-        m_setPointInDegrees = angleInDegrees;
+        m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
+    }
+
+    public Rotation2d getCurrentArmPosition() {
+        // Read the value from the encoder.
+        Rotation2d readingAngle = Rotation2d.fromRotations(m_hexBoreEncoder.get());
+        // The encoder's zero value does not always match the arm's zero, so apply the offest.
+        Rotation2d actualAngle = readingAngle.minus(m_encoderOffset);
+        return actualAngle;
     }
 
     // Call this every iteration to update the motor values.
     // Returns false if there is an issue with the arm.
     // DO NOT use autoControl and manual control at the same time.
     public boolean autoControl() {
-        var currentAngleInDegrees = getAngleInDegrees();
-        if (currentAngleInDegrees < 0 || currentAngleInDegrees > 180.0) {
-            // We should not be here. Turn off motor power.
-            m_leftMotor.set(0.0);
-            m_rightMotor.set(0.0);
-            // Allow motors to move freely in case it is jamming against something.
-            m_leftMotor.setIdleMode(IdleMode.kCoast);
-            m_rightMotor.setIdleMode(IdleMode.kCoast);
-            return false;
-        }
-        // Determine how far we are from the desired rotation.
-        double delta =  m_setPointInDegrees - currentAngleInDegrees;
-        var powerValue = proportionalPower(delta);
-        if (powerValue < 0.01) {
-            // Close enough, stop the motor and maintain position.
-            m_leftMotor.set(0.0);
-            m_rightMotor.set(0.0);
-            m_leftMotor.setIdleMode(IdleMode.kCoast);
-            m_rightMotor.setIdleMode(IdleMode.kCoast);
-        } else {
-            m_leftMotor.set(powerValue);
-            m_rightMotor.set(powerValue);
-            m_leftMotor.setIdleMode(IdleMode.kCoast);
-            m_rightMotor.setIdleMode(IdleMode.kCoast);
-        }
+        double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), m_desiredAngle.getRadians());
+        m_debugginLastPIDOutput = pidOutput;
+        m_leftMotor.set(pidOutput);
+        m_rightMotor.set(pidOutput);
         return true;
     }
 
-    // Returns the current angle in degrees.
-    // Range of values is 0 to 360.
-    public double getAngleInDegrees() {
-        double rotation = m_hexBoreEncoder.getAbsolutePosition() - m_encoderOffsetInRotations;
-        // "Normalize" the value to the range of 0 to 1: adjust for negatives, or values greater than one rotation.
-        while (rotation < 0) {
-            rotation += 1.0;
-        }
-        while (rotation > 1.0) {
-            rotation -= 1.0;
-        }
-        double rotationInDegrees = rotation * 360.0;
-        return rotationInDegrees;
+    public void simulationPeriodic(double timeSinceLastCall) {
+        m_simulatedArm.setInput(m_leftMotor.get());
+        //m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
+        m_simulatedArm.update(timeSinceLastCall);
+        m_simulatedEncoder.setDistance(m_simulatedArm.getAngleRads());
+        // RoboRioSim.setVInVoltage(
+        //     BatterySim.calculateDefaultBatteryLoadedVoltage(
+        //         m_simulatedArm.getCurrentDrawAmps()
+        //     )
+        // );
     }
 
-    // Provides a scaled power value (-1.0 to +1.0) based on how far the motor needs to move.
-    public double proportionalPower(double degreesToTravel) {
-        // Handle positive and negative directions seperately because going down has gravity assisting.
-        if (degreesToTravel > 45.0) {
-            // More 45 degrees up, go full power.
-            return 1.0;
-        } else if (degreesToTravel > 15) {
-            return 0.5; 
-        } else if (degreesToTravel > 1.0) {
-            return 0.25;
-        } else if (degreesToTravel < -45.0) {
-            return 0.25;
-        } else if (degreesToTravel < -15.0) {
-            return .125;
-        } else if (degreesToTravel < -1.0) {
-            return 0.5;
-        } else {
-            // Positions that are within one degree are close enough.
-            return 0.0;
-        }
+    @Override
+    public void initSendable(SendableBuilder builder) {
+      builder.setSmartDashboardType("ArmModule");
+      builder.addDoubleProperty("armCurrentDegrees", this::dashboardGetCurrentArmPositionInDegrees, null);
+      builder.addDoubleProperty("armDesiredDegrees", this::dashboardGetDesiredtArmPositionInDegrees, null);
+      builder.addDoubleProperty("motorCurrentVoltage", this::dashboardGetArmVoltage, null);
+      builder.addDoubleProperty("PIDOutput", this::dashboarGetLastPIDOutput, null);
     }
-    
+
+    double dashboardGetDesiredtArmPositionInDegrees() {
+        return m_desiredAngle.getDegrees();
+    }
+
+    double dashboardGetCurrentArmPositionInDegrees() {
+        return getCurrentArmPosition().getDegrees();
+    }
+
+    double dashboardGetArmVoltage() {
+        return m_leftMotor.get() * 12.0;
+    }
+
+    double dashboarGetLastPIDOutput() {
+        return m_debugginLastPIDOutput;
+    }
 }

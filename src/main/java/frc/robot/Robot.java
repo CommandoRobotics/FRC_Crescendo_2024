@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Arm;
 
 /**
@@ -23,9 +23,14 @@ import frc.robot.Arm;
 public class Robot extends TimedRobot {
   private Arm m_arm;
   private final XboxController m_controller = new XboxController(0);
+  private double m_accumulatedTestTime;
+  private double m_currentSetPointInDegrees;
 
   public Robot() {
     m_arm = new Arm();
+    m_currentSetPointInDegrees = 0.0;
+    m_accumulatedTestTime = 0.0;
+    SmartDashboard.putData("TheArm", m_arm);
   }
 
   /**
@@ -47,7 +52,18 @@ public class Robot extends TimedRobot {
   // This function is called periodically during autonomous.
   @Override
   public void autonomousPeriodic() {
-    m_arm.setAngleInDegrees(20.0);
+    m_accumulatedTestTime += getPeriod();
+    if (m_accumulatedTestTime > 5.0) {
+      // Reset the timer and change the set point.
+      m_accumulatedTestTime = 0.0;
+      if (m_currentSetPointInDegrees > 45) {
+          m_currentSetPointInDegrees = 0;
+      } else {
+          m_currentSetPointInDegrees = 80;
+      }
+    }
+
+    m_arm.setAngleInDegrees(m_currentSetPointInDegrees);
     m_arm.autoControl();
   }
 
@@ -63,7 +79,10 @@ public class Robot extends TimedRobot {
     // Turn off the motors if the controller is close enough to center.
     double stickPower = MathUtil.applyDeadband(xBoxPower, 0.02);
     // Set the arm to this power.
-    m_arm.manuallyControlArm(stickPower);
+    m_currentSetPointInDegrees += stickPower;
+    m_arm.setAngleInDegrees(m_currentSetPointInDegrees);
+    m_arm.autoControl();
+    //m_arm.manuallyControlArm(stickPower);
   }
 
   /** This function is called once each time the robot enters test mode. */
@@ -73,4 +92,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
+
+  @Override
+  public void simulationPeriodic() {
+    m_arm.simulationPeriodic(getPeriod());
+  }
 }
