@@ -34,8 +34,11 @@ public class Dispenser {
     // can help avoid improper access and prevent bugs in our code.
 
     // Declare all the motors that will be used in this class.
-    private CANSparkMax m_intakeMotor; // Motor controlling the upper roller on the shooter.
-    // TODO: Create variables for the upper shooter motor and the lower shooter motor.
+    private CANSparkMax m_intakeMotor;
+    private CANSparkMax uppershooterMotor;
+    private CANSparkMax lowershooterMotor;
+     // Motor controlling the upper roller on the shooter.
+    
     
     // This special function is known as the constructor for the class. Notice that the constructor
     // has the EXACT SAME name (including capitalization) as our class' name. Also note that the
@@ -48,26 +51,35 @@ public class Dispenser {
         // Set the information for our member variables.
 
         // Set the motors to the appropriate CAN device ID and set the type (brushed or brushless).
-        // TODO: Change deviceID 21 to the appropriate CAN ID for our intake motor.
-        m_intakeMotor = new CANSparkMax(21, MotorType.kBrushless);
+    
+        m_intakeMotor = new CANSparkMax(41, MotorType.kBrushless);
+        uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
+        lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
         m_intakeMotor.setIdleMode(IdleMode.kCoast);
+        uppershooterMotor.setIdleMode(IdleMode.kCoast);
+        lowershooterMotor.setIdleMode(IdleMode.kCoast);
         // Set the motor as "inverted", meaining when we tell it to operate at a speed, it will
         // actually turn in reverse at that speed (i.e. -50% when we tell it +50%). This is because
         // we think of positive speeds as brining in a Note, but the motor is rotate such that positive
         // would normally spit the Note out.
         m_intakeMotor.setInverted(true);
+        uppershooterMotor.setInverted(true);
+        
 
-        // TODO: Set up the shooter motors. These will be similiar to the intake, but different
+        
         // CAN IDs and only one will be Inverted since the shooter wheels spin in opposite directions.
+    
     }
 
     // This function runs the motors to pull in a Note (but not shoot it yet).
     public void intakeNote() {
         // Turn the intake wheels at 50% (0.5) speed.
         m_intakeMotor.set(0.5);
-
+        uppershooterMotor.set(0);
+        lowershooterMotor.set(0);
         // TODO: Set the shooter motors to zero speed since we don't want to shoot it yet.
     }
 
@@ -82,8 +94,9 @@ public class Dispenser {
         // slowly through the intake, it won't come out of the shooter as fast as possible.
         // So, set the intake speed to 100%.
         m_intakeMotor.set(1.0);
-
-        // TODO: Set the shooter motors to full speed.
+        uppershooterMotor.set(1.0);
+        lowershooterMotor.set(1.0);
+        
 
     }
 
@@ -91,15 +104,19 @@ public class Dispenser {
     // Since the shooter motors take some amount of time to get to their max speed, we would run
     // this function before we actually call shootNoteImmediately().
     public void spinUpShooterWheels() {
-        // TODO: Set the intake motor speed to zero, so the Note does not enter the shooter yet.
         
-        // TODO: Set the shooter motors to full speed.
+        m_intakeMotor.set(0);
+        uppershooterMotor.set(1.0);
+        lowershooterMotor.set(1.0);
+        
     }
 
     // This function stops all the motors.
     // We'll use this function when have intaken Note, but are not ready to shoot it.
     public void stop() {
         m_intakeMotor.set(0);
-        // TODO: Set the shooter motor speeds to zero.
+        uppershooterMotor.set(0);
+        lowershooterMotor.set(0);
+        
     }
 }
