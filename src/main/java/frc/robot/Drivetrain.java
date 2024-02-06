@@ -151,9 +151,10 @@ public class Drivetrain implements Sendable {
   }
 
   public void debuggingDriveToGyroNorth() {
-    double desiredSpeedInMetersPerSecond = 0.5;
+    double desiredSpeedInMetersPerSecond = 0.0;
     SwerveModuleState desiredState = new SwerveModuleState(desiredSpeedInMetersPerSecond, getGyroYaw());
-    debuggingDriveAllSameState(desiredState);
+    //debuggingDriveAllSameState(desiredState);
+    m_frontLeft.setDesiredState(desiredState);
   }
 
   public void debuggingDriveAllSameState(SwerveModuleState desiredState) {

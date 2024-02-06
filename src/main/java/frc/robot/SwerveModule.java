@@ -57,15 +57,15 @@ public class SwerveModule implements Sendable,AutoCloseable {
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          .5,
-          0.1,
-          0.2,
+          .04,
+          0.05,
+          0.0,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(0.22, 0.0);
+  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(.25, 0.0);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -109,7 +109,8 @@ public class SwerveModule implements Sendable,AutoCloseable {
      var encoderRotation = getCurrentYaw();
 
     // Optimize the reference state to avoid spinning further than 90 degrees
-    SwerveModuleState adjustedDesiredSttate = SwerveModuleState.optimize(desiredState, encoderRotation);
+    SwerveModuleState adjustedDesiredSttate = desiredState;
+    //SwerveModuleState adjustedDesiredSttate = SwerveModuleState.optimize(desiredState, encoderRotation);
     m_debuggingLastDesiredState = adjustedDesiredSttate; // Save this off for viewing on the dashboard.
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
@@ -163,6 +164,33 @@ public class SwerveModule implements Sendable,AutoCloseable {
     builder.addDoubleProperty("yawCurrentDegrees", this::dashboardGetCurrentYawDegrees, null);
     builder.addDoubleProperty("yawTargetDegrees", this::dashboardGetDesiredYawDegrees, null);
     builder.addDoubleProperty("yawDeltaDegrees", this::dashboardYawDeltaRawInDegrees, null);
+    builder.addDoubleProperty("yawP", this::getYawP, this::setYawP);
+    builder.addDoubleProperty("yawI", this::getYawI, this::setYawI);
+    builder.addDoubleProperty("yawD", this::getYawD, this::setYawD);
+  }
+
+  public double getYawP() {
+    return m_turningPIDController.getP();
+  }
+
+  public void setYawP(double newP) {
+    m_turningPIDController.setP(newP);
+  }
+
+  public double getYawI() {
+    return m_turningPIDController.getI();
+  }
+
+  public void setYawI(double newI) {
+    m_turningPIDController.setI(newI);
+  }
+
+  public double getYawD() {
+    return m_turningPIDController.getD();
+  }
+
+  public void setYawD(double newD) {
+    m_turningPIDController.setD(newD);
   }
 
   // The following functions are only meant for the dashbord
@@ -200,10 +228,13 @@ public class SwerveModule implements Sendable,AutoCloseable {
     m_debuggingAccumulatedTestTime += timeSinceLastCall;
 
     // Set how long each of the tests will run for.
-    final double driveForwardEnd = 3;
-    final double driveBackwardsEnd = 3 + driveForwardEnd;
-    final double turnCounterClockwiseEnd = 3 + driveBackwardsEnd;
-    final double turnClockwiseEnd = 3 + turnCounterClockwiseEnd;
+    final double driveForwardEnd = 5;
+    final double driveBackwardsEnd = 5 + driveForwardEnd;
+    final double turnCounterClockwiseEnd = 0 + driveBackwardsEnd;
+    final double turnClockwiseEnd = 0 + turnCounterClockwiseEnd;
+
+    final double driveVoltage = 0.22;
+    final double turningVoltage = 0.25;
 
     // Adjust the timer if we passed the end of the test.
     while (m_debuggingAccumulatedTestTime >= turnClockwiseEnd) {
@@ -211,17 +242,17 @@ public class SwerveModule implements Sendable,AutoCloseable {
     }
     
     if (m_debuggingAccumulatedTestTime < driveForwardEnd) {
-      m_driveMotor.set(0.5);
+      m_driveMotor.setVoltage(driveVoltage);
       m_turningMotor.stopMotor();
     } else if (m_debuggingAccumulatedTestTime < driveBackwardsEnd) {
-      m_driveMotor.set(0.5);
+      m_driveMotor.setVoltage(-driveVoltage);
       m_turningMotor.stopMotor();
     } else if (m_debuggingAccumulatedTestTime < turnCounterClockwiseEnd) {
       m_driveMotor.stopMotor();
-      m_turningMotor.set(0.2);
+      m_turningMotor.setVoltage(turningVoltage);
     } else if (m_debuggingAccumulatedTestTime < turnClockwiseEnd) {
       m_driveMotor.stopMotor();
-      m_turningMotor.set(-0.2);
+      m_turningMotor.setVoltage(-turningVoltage);
     } else {
       // Should not make it here
       m_driveMotor.stopMotor();
