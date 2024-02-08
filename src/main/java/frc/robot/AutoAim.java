@@ -41,8 +41,15 @@ public class AutoAim implements Sendable {
         return desiredYaw;
     }
 
+
+
+
     public double getDesiredShooterAngleInDegrees(){
-        return 0.0;
+        double xDistance = getLastX(); //TODO substract getLastX from the actual x value of speaker
+        double yDistance = getLastY(); //TODO subtract getLastY from the actual y value of speaker
+        double vectorDistance = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); 
+        double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/vectorDistance); //TODO find speaker height from programming references tab
+        return desiredAngle;
     }
 
     @Override
