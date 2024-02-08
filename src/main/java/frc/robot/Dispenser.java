@@ -38,11 +38,10 @@ public class Dispenser {
     private CANSparkMax m_intakeMotor;
     private CANSparkMax uppershooterMotor;
     private CANSparkMax lowershooterMotor;
-
-    // Declare all the beam break sensors used in this class.
+     // Motor controlling the upper roller on the shooter.
     private DigitalInput m_intakeBeamBreak;
     private DigitalInput m_indexerBeamBreak;
-    // TODO: Declare the beam break sensor for the shooter.
+    private DigitalInput m_shooterBeamBreak;
     
     // This special function is known as the constructor for the class. Notice that the constructor
     // has the EXACT SAME name (including capitalization) as our class' name. Also note that the
@@ -59,6 +58,10 @@ public class Dispenser {
         m_intakeMotor = new CANSparkMax(41, MotorType.kBrushless);
         uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
         lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+
+        m_intakeBeamBreak = new DigitalInput(0);
+        m_indexerBeamBreak = new DigitalInput(1);
+        m_shooterBeamBreak = new DigitalInput(2);
 
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
@@ -90,12 +93,14 @@ public class Dispenser {
    
     // Return true if the Indexer beam brake sensor sees a note.
     boolean indexerDetectsNote() {
-        // TODO: implement this function. See intakeDetectsNote() for similiar code.
+        boolean detectorSeesLight = m_indexerBeamBreak.get();
+        return detectorSeesLight;
     }
    
     // Return true if the Shooter beam brake sensor sees a note.
     boolean shooterDetectsNote() {
-        // TODO: implement this function. See intakeDetectsNote() for similiar code.
+        boolean detecterSeesLight = m_shooterBeamBreak.get();
+        return detecterSeesLight;
     }
 
     // This function returns true if there is a note anywhere in the dispenser,
@@ -121,7 +126,7 @@ public class Dispenser {
         m_intakeMotor.set(0.5);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
-        // TODO: Set the shooter motors to zero speed since we don't want to shoot it yet.
+        
     }
 
     // This function runs the intake motors until a Note is stored in our index area.
@@ -130,17 +135,19 @@ public class Dispenser {
     public void autoIntake() {
         if (indexerDetectsNote()) {
             // Note is in indexer.
-            // TODO: Stop the intake motors.
+            m_intakeMotor.set(0);
         } else {
             // No Note yet
-            // TODO: Run the intake motors.
+            intakeNote();
         }
     }
 
     // This function runs the motors in reverse to get rid of a note without shooting it.
     // An example of needing this is if we accidently intake a second Note.
     public void ejectNote() {
-        // TODO: Control the motors in reverse so the Note exits the dispenser through the intake.
+        m_intakeMotor.set(-0.5);
+        uppershooterMotor.set(-0.5);
+        lowershooterMotor.set(-0.5);
     }
 
     // This function runs all the motors in reverse if there is a Note anywhere in the dispenser. When there are no notes in the dispenser, it turns off the intake and resumes spinning up the shooter motors.
@@ -150,7 +157,7 @@ public class Dispenser {
             ejectNote();
         } else {
             // No notes in the dispenser, so we can stop ejecting.
-            // TODO: stop the intake motors, but spin up the shooter motors to preare for shooting.
+            spinUpShooterWheels();
         }
     }
 
@@ -173,9 +180,9 @@ public class Dispenser {
 
     // This function runs the intake motors to push the Note through the shooter, until the Note is fully out. Then it turns off the intake motors, but keeps the shooter motors spinning.
     void feedShooter() {
-        // TODO: Implement the logic for this function. Look at ejectUntilEmpty for similar
-        // logic, however instead of running the motors in reverse, we want the motors to
-        // run forward.
+        if (anySensorDetectsNote()) {
+            shootNoteImmediately();
+        }
     }
 
     // This function runs the shooter motors, while keeping the intake system stopped.
