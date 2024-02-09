@@ -7,6 +7,7 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot;
 
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -45,6 +46,7 @@ public class Arm implements Sendable {
     private final Rotation2d m_encoderOffset = Rotation2d.fromRotations(0.0); // TODO: Determine actual encoddr offset.
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
 
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
     private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
 
     // The following is just for simulation and debugging
@@ -55,7 +57,8 @@ public class Arm implements Sendable {
     private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
     private final Rotation2d maxPosition = Rotation2d.fromDegrees(135);
     private DutyCycleEncoderSim m_simulatedEncoder;
-    private double m_debugginLastPIDOutput;
+    private double m_debuggingLastPIDOutput;
+    private double m_debbugingLastFeedForwardOutput;
 
     // Constructor
     public Arm() {
@@ -78,7 +81,8 @@ public class Arm implements Sendable {
             minPosition.getRadians()
         );
         m_simulatedEncoder = new DutyCycleEncoderSim(m_hexBoreEncoder);
-        m_debugginLastPIDOutput = 0.0;
+        m_debbugingLastFeedForwardOutput = 0;
+        m_debuggingLastPIDOutput = 0.0;
     }
 
     // Call this if you want to manually control the arm motors.
@@ -108,10 +112,13 @@ public class Arm implements Sendable {
     // Returns false if there is an issue with the arm.
     // DO NOT use autoControl and manual control at the same time.
     public boolean autoControl() {
+        double feedForwardOutput = m_armFeedFoward.calculate(m_desiredAngle.getRadians(), 1.0);
+        m_debbugingLastFeedForwardOutput = feedForwardOutput;
         double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), m_desiredAngle.getRadians());
-        m_debugginLastPIDOutput = pidOutput;
-        m_leftMotor.set(pidOutput);
-        m_rightMotor.set(pidOutput);
+        m_debuggingLastPIDOutput = pidOutput;
+        double totalMotorOutput = feedForwardOutput + pidOutput;
+        m_leftMotor.set(totalMotorOutput);
+        m_rightMotor.set(totalMotorOutput);
         return true;
     }
 
@@ -133,7 +140,8 @@ public class Arm implements Sendable {
       builder.addDoubleProperty("armCurrentDegrees", this::dashboardGetCurrentArmPositionInDegrees, null);
       builder.addDoubleProperty("armDesiredDegrees", this::dashboardGetDesiredtArmPositionInDegrees, null);
       builder.addDoubleProperty("motorCurrentVoltage", this::dashboardGetArmVoltage, null);
-      builder.addDoubleProperty("PIDOutput", this::dashboarGetLastPIDOutput, null);
+      builder.addDoubleProperty("FeedForwardOutput", this::dashboardGetLastFeedForwardOutput, null);
+      builder.addDoubleProperty("PIDOutput", this::dashboardGetLastPIDOutput, null);
     }
 
     double dashboardGetDesiredtArmPositionInDegrees() {
@@ -148,7 +156,11 @@ public class Arm implements Sendable {
         return m_leftMotor.get() * 12.0;
     }
 
-    double dashboarGetLastPIDOutput() {
-        return m_debugginLastPIDOutput;
+    double dashboardGetLastPIDOutput() {
+        return m_debuggingLastPIDOutput;
+    }
+
+    double dashboardGetLastFeedForwardOutput() {
+        return m_debbugingLastFeedForwardOutput;
     }
 }
