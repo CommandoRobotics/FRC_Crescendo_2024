@@ -32,12 +32,15 @@ public class Robot extends TimedRobot
   private final SwerveSubsystem m_drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),
   "swerve"));
 
+  private double m_accumulatedAutoTime;
+  private boolean m_driveForward;
+
  //private Timer disabledTimer;
 
-  // public Robot()
-  // {
-  //   //instance = this;
-  // }
+  public Robot()
+  {
+    //instance = this;
+  }
 
   // public static Robot getInstance()
   // {
@@ -103,6 +106,8 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousInit()
   {
+    m_driveForward = true;
+    m_accumulatedAutoTime = 0.0;
     m_drivebase.resetOdometry(new Pose2d(new Translation2d(0,0), m_drivebase.getHeading()));
     // m_robotContainer.setMotorBrake(true);
     // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
@@ -119,6 +124,24 @@ public class Robot extends TimedRobot
    */
   @Override
   public void autonomousPeriodic() {
+    autoDriveForwardAndBackwardTimed();
+  }
+
+  public void autoDriveForwardAndBackwardTimed() {
+    m_accumulatedAutoTime += getPeriod();
+    if (m_accumulatedAutoTime > 5.0) {
+      m_accumulatedAutoTime = 0;
+      m_driveForward = !m_driveForward;
+    }
+    if (m_driveForward) { 
+      m_drivebase.drive(new Translation2d(0.5, 0.0), 0.0, false);
+    } else {
+      m_drivebase.drive(new Translation2d(-0.5, 0.0), 0.0, false);
+    }
+  }
+
+
+  public void autoDriveToPoint() {
     var currentPose = m_drivebase.getPose();
     final double distanceToDrive = 3.0;
     var distanceDriven = currentPose.getX();
