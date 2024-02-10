@@ -124,7 +124,7 @@ public class Robot extends TimedRobot
    */
   @Override
   public void autonomousPeriodic() {
-    autoDriveForwardAndBackwardTimed();
+    autoDriveToPoint();
   }
 
   public void autoDriveForwardAndBackwardTimed() {
@@ -145,8 +145,19 @@ public class Robot extends TimedRobot
     var currentPose = m_drivebase.getPose();
     final double distanceToDrive = 3.0;
     var distanceDriven = currentPose.getX();
-    if (distanceDriven < distanceToDrive) {
-      m_drivebase.drive(new Translation2d(0.5, 0.0), 0.0, false);
+    if (distanceDriven <= distanceToDrive) {
+      m_drivebase.drive(new Translation2d(.5, 0.0), 0.0, true);
+    } else {
+      m_drivebase.lock();
+    }
+  }
+
+  public void autoRotateToPoint() {
+    var currentPose = m_drivebase.getPose();
+    final double degreesToRotate = 90.0;
+    var amountRotated = currentPose.getRotation();
+    if (amountRotated.getDegrees() <= degreesToRotate) {
+      m_drivebase.drive(new Translation2d(0.0, 0.0), 0.5, true);
     } else {
       m_drivebase.lock();
     }
