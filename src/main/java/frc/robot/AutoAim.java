@@ -41,22 +41,53 @@ public class AutoAim implements Sendable {
         return desiredYaw;
     }
 
-
-
-
-    public double getDesiredShooterAngleInDegrees(){
-        double xDistance = getLastX(); //TODO substract getLastX from the actual x value of speaker
-        double yDistance = getLastY(); //TODO subtract getLastY from the actual y value of speaker
-        double vectorDistance = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); 
-        double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/vectorDistance); //TODO find speaker height from programming references tab
-        return desiredAngle;
+    public double getDesiredShooterAngleInDegrees(boolean isRedAlliance){
+        if (isRedAlliance==true){
+            double xDistance = Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
+            double yDistance = Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
+            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
+            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
+            return desiredAngle;
+        } else {
+            double xDistance = -Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
+            double yDistance = -Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
+            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
+            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
+            return desiredAngle;   
+        }
     }
+
+    public boolean legalToShoot(boolean isRedAlliance){ //returns true if we are not in opposing alliance's wing
+        boolean isLegalToShoot;
+        double currentXPos = getLastX();
+        if(isRedAlliance == true && currentXPos <= -Constants.WINGDISTANCEFROMCENTER){//returns false if we are red alliance and in Blue ALliance's wing
+            isLegalToShoot = false;
+        } 
+        else if (isRedAlliance == false && currentXPos >= Constants.WINGDISTANCEFROMCENTER){   //returns false if we are blue alliance and in Red Alliance's wing
+            isLegalToShoot = false;
+        }   
+        else {
+            isLegalToShoot = true;
+        }
+            return isLegalToShoot;
+    }
+
+    public boolean safeToShoot(boolean isRedAlliance){
+        boolean isSafeToShoot = true;
+        return isSafeToShoot;
+    }
+
+    
+    
+
+
+
 
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("AutoAim");
         builder.addDoubleProperty("desiredYaw", this::getDesiredYawInDegrees, null);
-        builder.addDoubleProperty("desiredShootAngle", this::getDesiredShooterAngleInDegrees, null);
+       // builder.addDoubleProperty("desiredShootAngle", this::getDesiredShooterAngleInDegrees, null);
 
         builder.addDoubleProperty("lastX", this::getLastX, null);
     }
