@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
     //m_swerve.debuggingDriveMotorTest(getPeriod());
     //m_swerve.debuggingDriveInSquare(getPeriod());
     //m_swerve.debuggingDriveToGyroNorth();
-    m_swerve.drive(1.0, 0.0, 1.0, true, getPeriod());
+    m_swerve.drive(1.0, 0.0, 0.0, true, getPeriod());
 
     // Update where we think we are on the field.
     m_swerve.updateOdometry();

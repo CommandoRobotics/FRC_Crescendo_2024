@@ -52,13 +52,13 @@ public class SwerveModule implements Sendable,AutoCloseable {
   private double m_debuggingAccumulatedTestTime; // Used by motor test to keep track of when to change values.
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(.5, 0, 0);
+  private final PIDController m_drivePIDController = new PIDController(1.0, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          .04,
-          0.05,
+          .02,
+          0.00,
           0.0,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
@@ -78,7 +78,8 @@ public class SwerveModule implements Sendable,AutoCloseable {
       int driveMotorChannel,
       int turningMotorChannel,
       int turningEncoderID,
-      double turningEncoderOffsetInRotations) {
+      double turningEncoderOffsetInRotations,
+      boolean inverted) {
     m_driveMotor = new CANSparkMax(driveMotorChannel, MotorType.kBrushless);
     m_driveEncoder = m_driveMotor.getEncoder();
     m_turningMotor = new CANSparkMax(turningMotorChannel, MotorType.kBrushless);
@@ -86,6 +87,7 @@ public class SwerveModule implements Sendable,AutoCloseable {
     m_turningEncoderOffset = Rotation2d.fromRotations(turningEncoderOffsetInRotations);
     m_debuggingLastDesiredState = new SwerveModuleState(0.0, new Rotation2d(0)); // Set robot to stopped and straight forward.
     m_debuggingAccumulatedTestTime = 0.0;
+    m_driveMotor.setInverted(inverted);
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
