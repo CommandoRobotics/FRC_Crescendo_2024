@@ -48,6 +48,8 @@ public class Arm implements Sendable {
 
     private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
     private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
+    
+    // TODO: Add the two limit switches (as Digital Inputs) here.
 
     // The following is just for simulation and debugging
     private SingleJointedArmSim m_simulatedArm;
@@ -69,6 +71,7 @@ public class Arm implements Sendable {
         m_rightMotor.setInverted(true);
         m_hexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
+        // TODO: Assign the Digital Input port numbers here.
 
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
@@ -108,6 +111,13 @@ public class Arm implements Sendable {
         return actualAngle;
     }
 
+    public void getDownLimitSwitchPressed() {
+        // TODO: implement with actual limit switch
+        //return m_downLimitSwitch.get();
+    }
+
+    // TODO: Create a getUpLimitSwitchPressed(), similiar to above.
+
     // Call this every iteration to update the motor values.
     // Returns false if there is an issue with the arm.
     // DO NOT use autoControl and manual control at the same time.
@@ -117,6 +127,10 @@ public class Arm implements Sendable {
         double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), m_desiredAngle.getRadians());
         m_debuggingLastPIDOutput = pidOutput;
         double totalMotorOutput = feedForwardOutput + pidOutput;
+        // TODO: Use the limit switches to determine if we should allow the motor to continue forward or backward.
+        // If either limit switch is set (indicating it is pressed), check if the totalMotorOutput is
+        // in that direction (i.e. positive for the front limit switch and negative for the back one) and change
+        // the totalMotorOutput to zero. Don't change it to zero for the other direction.
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
         return true;
