@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
@@ -34,6 +35,7 @@ public class Robot extends TimedRobot
 
   private double m_accumulatedAutoTime;
   private boolean m_driveForward;
+  private final XboxController m_xbox = new XboxController(0);
 
  //private Timer disabledTimer;
 
@@ -106,9 +108,7 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousInit()
   {
-    m_driveForward = true;
-    m_accumulatedAutoTime = 0.0;
-    m_drivebase.resetOdometry(new Pose2d(new Translation2d(0,0), m_drivebase.getHeading()));
+    autoReset();
     // m_robotContainer.setMotorBrake(true);
     // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -127,6 +127,36 @@ public class Robot extends TimedRobot
     autoDriveToPoint();
   }
 
+  public void autoReset() {
+    m_driveForward = true;
+    m_accumulatedAutoTime = 0.0;
+    m_drivebase.resetOdometry(new Pose2d(new Translation2d(0,0), m_drivebase.getHeading()));
+  }
+
+  public void autoDriveForward() {
+    m_drivebase.drive(new Translation2d(0.5, 0.0), 0.0, false);
+  }
+
+  public void autoDriveBackward() {
+    m_drivebase.drive(new Translation2d(-0.5, 0.0), 0.0, false);
+  }
+
+  public void autoDriveLeft() {
+    m_drivebase.drive(new Translation2d(0.0, 0.5), 0.0, false);
+  }
+
+  public void autoDriveRight() {
+    m_drivebase.drive(new Translation2d(0, -0.5), 0.0, false);
+  }
+
+  public void autoFakeDriveForward() {
+    m_drivebase.drive(new Translation2d(0.1, 0.0), 0.0, false);
+  }
+
+  public void autoFakeDriveLeft() {
+    m_drivebase.drive(new Translation2d(0, 0.1), 0.0, false);
+  }
+
   public void autoDriveForwardAndBackwardTimed() {
     m_accumulatedAutoTime += getPeriod();
     if (m_accumulatedAutoTime > 5.0) {
@@ -134,9 +164,9 @@ public class Robot extends TimedRobot
       m_driveForward = !m_driveForward;
     }
     if (m_driveForward) { 
-      m_drivebase.drive(new Translation2d(0.5, 0.0), 0.0, false);
+      autoDriveForward();
     } else {
-      m_drivebase.drive(new Translation2d(-0.5, 0.0), 0.0, false);
+      autoDriveBackward();
     }
   }
 
@@ -150,6 +180,25 @@ public class Robot extends TimedRobot
     } else {
       m_drivebase.lock();
     }
+  }
+
+  public void autoRelaseMotors() {
+    m_drivebase.drive(new Translation2d(0.0, 0.0), 0.0, false);
+    m_drivebase.setMotorBrake(false);
+  }
+
+  public void autoStopMoving() {
+    m_drivebase.drive(new Translation2d(0.0, 0.0), 0.0, false);
+    m_drivebase.setMotorBrake(true);
+  }
+
+  public void autoRotateClockwise() {
+    m_drivebase.drive(new Translation2d(0.0, 0.0), 0.5, false);
+  }
+
+
+  public void autoRotateCounterClockwise() {
+    m_drivebase.drive(new Translation2d(0.0, 0.0), 0.5, false);
   }
 
   public void autoRotateToPoint() {
@@ -184,6 +233,25 @@ public class Robot extends TimedRobot
   @Override
   public void teleopPeriodic()
   {
+    if (m_xbox.getXButton()) {
+      autoRotateCounterClockwise();
+    } else if (m_xbox.getBButton()) {
+      autoRotateCounterClockwise();
+    } else if (m_xbox.getYButton()) {
+      autoDriveForward();
+    } else if (m_xbox.getAButton()) {
+      autoDriveBackward();
+    } else if (m_xbox.getRightBumperPressed()) {
+      autoReset();
+    } else if (m_xbox.getRightBumper()) {
+      autoDriveToPoint();
+    } else if (m_xbox.getLeftBumper()) {
+      autoRelaseMotors();
+    } else if (m_xbox.getLeftTriggerAxis() > 0.1) {
+      autoStopMoving();
+    } else {
+      autoStopMoving();
+    }
   }
 
   @Override
