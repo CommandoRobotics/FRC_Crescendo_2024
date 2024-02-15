@@ -87,6 +87,15 @@ public class Arm implements Sendable {
         m_testUp = true;
     }
 
+    // Sets the motors to brake mode and stop them.
+    public void stop() {
+        m_leftMotor.setIdleMode(IdleMode.kBrake);
+        m_rightMotor.setIdleMode(IdleMode.kBrake);
+
+        m_leftMotor.stopMotor();
+        m_rightMotor.stopMotor();
+    }
+
     // Call this if you want to manually control the arm motors.
     // Positive percentage is rotation from intake position (horiontal) to shooting (upright).
     // Percentage should be from -1.0 to +1.0.
