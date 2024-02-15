@@ -4,9 +4,12 @@
 
 package frc.robot;
 
+import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Arm;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -15,12 +18,15 @@ import edu.wpi.first.wpilibj.XboxController;
  * directory.
  */
 public class Robot extends TimedRobot {
+  private Arm m_arm;
   private Dispenser m_dispenser;
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
 
   public Robot() {
     m_dispenser = new Dispenser();
+    m_arm = new Arm();
+    SmartDashboard.putData("TheArm", m_arm);
   }
 
   /**
@@ -75,4 +81,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
+
+  @Override
+  public void simulationPeriodic() {
+    m_arm.simulationPeriodic(getPeriod());
+  }
 }
