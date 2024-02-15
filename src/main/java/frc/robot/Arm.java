@@ -169,7 +169,7 @@ public class Arm implements Sendable {
     // Test raising and lowering the arm
     // To run this test, call it in autonomousPeriodic
     public void test() {
-        double current = m_testDesiredAngle.getDegrees();
+        double current = m_desiredAngle.getDegrees();
         if (m_testUp && current >= 89.9) {
             // Already at top, go down.
             m_testUp = false;
