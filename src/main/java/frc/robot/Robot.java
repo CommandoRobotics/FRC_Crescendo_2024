@@ -22,14 +22,10 @@ import frc.robot.Arm;
  */
 public class Robot extends TimedRobot {
   private Arm m_arm;
-  private final XboxController m_controller = new XboxController(0);
-  private double m_accumulatedTestTime;
-  private double m_currentSetPointInDegrees;
+
 
   public Robot() {
     m_arm = new Arm();
-    m_currentSetPointInDegrees = 0.0;
-    m_accumulatedTestTime = 0.0;
     SmartDashboard.putData("TheArm", m_arm);
   }
 
@@ -52,19 +48,7 @@ public class Robot extends TimedRobot {
   // This function is called periodically during autonomous.
   @Override
   public void autonomousPeriodic() {
-    m_accumulatedTestTime += getPeriod();
-    if (m_accumulatedTestTime > 5.0) {
-      // Reset the timer and change the set point.
-      m_accumulatedTestTime = 0.0;
-      if (m_currentSetPointInDegrees > 45) {
-          m_currentSetPointInDegrees = 0;
-      } else {
-          m_currentSetPointInDegrees = 80;
-      }
-    }
 
-    m_arm.setAngleInDegrees(m_currentSetPointInDegrees);
-    m_arm.autoControl();
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
@@ -74,15 +58,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    // Read the XBox stick value. Multiply by negative one because XBox controls are inverted (up is negative).
-    double xBoxPower = -1.0 * m_controller.getLeftY();
-    // Turn off the motors if the controller is close enough to center.
-    double stickPower = MathUtil.applyDeadband(xBoxPower, 0.02);
-    // Set the arm to this power.
-    m_currentSetPointInDegrees += stickPower;
-    m_arm.setAngleInDegrees(m_currentSetPointInDegrees);
-    m_arm.autoControl();
-    //m_arm.manuallyControlArm(stickPower);
+
   }
 
   /** This function is called once each time the robot enters test mode. */

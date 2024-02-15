@@ -59,6 +59,7 @@ public class Arm implements Sendable {
     private DutyCycleEncoderSim m_simulatedEncoder;
     private double m_debuggingLastPIDOutput;
     private double m_debbugingLastFeedForwardOutput;
+    private boolean m_testUp;
 
     // Constructor
     public Arm() {
@@ -83,16 +84,17 @@ public class Arm implements Sendable {
         m_simulatedEncoder = new DutyCycleEncoderSim(m_hexBoreEncoder);
         m_debbugingLastFeedForwardOutput = 0;
         m_debuggingLastPIDOutput = 0.0;
+        m_testUp = true;
     }
 
     // Call this if you want to manually control the arm motors.
     // Positive percentage is rotation from intake position (horiontal) to shooting (upright).
     // Percentage should be from -1.0 to +1.0.
     // DO NOT use autoControl and manual control at the same time.
-    // public void manuallyControlArm(double motorPercent) {
-    //     m_leftMotor.set(motorPercent);
-    //     m_rightMotor.set(motorPercent);
-    // }
+    public void manuallyPowerArm(double motorPercent) {
+        m_leftMotor.set(motorPercent);
+        m_rightMotor.set(motorPercent);
+    }
 
     // Sets the target position of the Arm.
     // Arm in the intaking position (horizontal) is considered 0 degrees.
@@ -162,5 +164,21 @@ public class Arm implements Sendable {
 
     double dashboardGetLastFeedForwardOutput() {
         return m_debbugingLastFeedForwardOutput;
+    }
+
+    // Test raising and lowering the arm
+    // To run this test, call it in autonomousPeriodic
+    public void test() {
+        double current = m_testDesiredAngle.getDegrees();
+        if (m_testUp && current >= 89.9) {
+            // Already at top, go down.
+            m_testUp = false;
+            setAngleInDegrees(0);
+        } else if (current < 0.1) {
+            // Already at bottom, go up.
+            m_testUp = true;
+            setAngleInDegrees(90);
+        }
+        autoControl();
     }
 }
