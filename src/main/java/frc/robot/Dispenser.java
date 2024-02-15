@@ -11,6 +11,7 @@ package frc.robot;
 // and the place the others in alphabetical order, just so it is easy to read and conistent.
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -38,7 +39,9 @@ public class Dispenser {
     private CANSparkMax uppershooterMotor;
     private CANSparkMax lowershooterMotor;
      // Motor controlling the upper roller on the shooter.
-    
+    private DigitalInput m_intakeBeamBreak;
+    private DigitalInput m_indexerBeamBreak;
+    private DigitalInput m_shooterBeamBreak;
     
     // This special function is known as the constructor for the class. Notice that the constructor
     // has the EXACT SAME name (including capitalization) as our class' name. Also note that the
@@ -55,6 +58,10 @@ public class Dispenser {
         m_intakeMotor = new CANSparkMax(41, MotorType.kBrushless);
         uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
         lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+
+        m_intakeBeamBreak = new DigitalInput(0);
+        m_indexerBeamBreak = new DigitalInput(1);
+        m_shooterBeamBreak = new DigitalInput(2);
 
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
@@ -74,13 +81,67 @@ public class Dispenser {
     
     }
 
+    boolean intakeDetectsNote() {
+        boolean detectorSeesLight = m_intakeBeamBreak.get();
+        return detectorSeesLight;
+     }
+
+     boolean indexerDetectsNote() {
+        boolean detectorSeesLight = m_indexerBeamBreak.get();
+        return detectorSeesLight;
+     }
+
+     boolean shooterDetectsNote() {
+        boolean detecterSeesLight = m_shooterBeamBreak.get();
+        return detecterSeesLight;
+     }
+
+     boolean anySensorDetectsNote() {
+        if (intakeDetectsNote()) {
+            return true;
+        } else if (indexerDetectsNote()) {
+            return true;
+        } else if (shooterDetectsNote()) {
+            return true;
+        } else {
+            return false;
+        }
+     }
+
+     public void autoIntake() {
+        if (indexerDetectsNote()) {
+            m_intakeMotor.set(0);
+        } else {
+            intakeNote();
+        }
+     }
+
+     public void ejectNote() {
+        m_intakeMotor.set(-0.5);
+        uppershooterMotor.set(-0.5);
+        lowershooterMotor.set(-0.5);
+     }
+
+     void ejectUntilEmpty() {
+        if (anySensorDetectsNote()) {
+            ejectNote();
+        } else {
+            spinUpShooterWheels();
+        }
+     }
+
+     void feedShooter() {
+        if (anySensorDetectsNote()) {
+            shootNoteImmediately();
+        }
+     }
     // This function runs the motors to pull in a Note (but not shoot it yet).
     public void intakeNote() {
         // Turn the intake wheels at 50% (0.5) speed.
         m_intakeMotor.set(0.5);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
-        // TODO: Set the shooter motors to zero speed since we don't want to shoot it yet.
+        
     }
 
     // This function turns on all the motors to shoot the Note.
