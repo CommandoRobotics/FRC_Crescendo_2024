@@ -171,5 +171,11 @@ out/
 # Simulation GUI and other tools window save file
 simgui*.json
 
+# Simulated network tables
+networktables.json
+
+# Crash logs
+logs/
+
 # Version file
 src/main/java/frc/robot/BuildConstants.java
