@@ -11,17 +11,14 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Arm;
 
-/**
- * The VM is configured to automatically run this class, and to call the functions corresponding to
- * each mode, as described in the TimedRobot documentation. If you change the name of this class or
- * the package after creating this project, you must also update the manifest file in the resource
- * directory.
- */
+// The VM is configured to automatically run this class, and to call the functions corresponding to
+// each mode, as described in the TimedRobot documentation. If you change the name of this class or
+// the package after creating this project, you must also update the manifest file in the resource
+// directory.
 public class Robot extends TimedRobot {
   private Arm m_arm;
   private Dispenser m_dispenser;
   private final XboxController m_controller = new XboxController(0);
-  private final Timer m_timer = new Timer();
 
   public Robot() {
     m_dispenser = new Dispenser();
@@ -29,56 +26,78 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("TheArm", m_arm);
   }
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
+  // This function is run when the robot is first started up and should be used for any
+  // initialization code.
   @Override
   public void robotInit() {
+    m_arm.stop();
     m_dispenser.stop();
   }
 
-  /** This function is run once each time the robot enters autonomous mode. */
+  // This function is run once each time the robot enters autonomous mode.
   @Override
   public void autonomousInit() {
-    m_timer.restart();
+
   }
 
-  /** This function is called periodically during autonomous. */
+  // This function is called periodically during autonomous.
   @Override
   public void autonomousPeriodic() {
-    // Run the intake and shooter at full speed so we can practice our shots.
-    m_dispenser.shootNoteImmediately();
 
   }
 
-  /** This function is called once each time the robot enters teleoperated mode. */
+  // This function is called once each time the robot enters teleoperated mode.
   @Override
   public void teleopInit() {}
 
-  /** This function is called periodically during teleoperated mode. */
+  // This function is called periodically during teleoperated mode.
   @Override
   public void teleopPeriodic() {
-    // Y is shoot.
-    if (m_controller.getYButtonPressed()) {
+    // Arm control
+    double armDeadband = 0.5;
+    // Y is arm up (Speaker/Source position)
+    if (m_controller.getYButton()) {
+      m_arm.setAngleInDegrees(90);
+      m_arm.autoControl();
+    // A is arm Flat (intake postion)
+    } else if (m_controller.getAButton()) {
+      m_arm.setAngleInDegrees(0);
+      m_arm.autoControl();
+    // Right joystick (forward/backwards) is manual Arm control
+    } else if (m_controller.getRightY() < -armDeadband || armDeadband < m_controller.getRightY()) {
+      // The joystick goes from -1.0 to +1.0 and is inverted (forward is negative)
+      double armPowerMultiplier = -0.5;
+      double armPower = armPowerMultiplier * m_controller.getRightY();
+      m_arm.manuallyPowerArm(armPower);
+    // If none of the arm controls is pressed, let the arm automatically go to setpoint.
+    } else {
+      m_arm.autoControl();
+    }
+
+    // Dispenser control
+    // Left bumper is auto auto intake (until note in indexer)
+    if (m_controller.getLeftBumper()) {
+      m_dispenser.autoIntake();
+    // Right bumper is auto shoot (until empty)
+    } else if (m_controller.getRightBumper()) {
       m_dispenser.shootNoteImmediately();
-    // X is intake
+    // X is eject Notes
     } else if (m_controller.getXButtonPressed()) {
-      m_dispenser.intakeNote();
-    // B is spin motors (without shooting)
+      m_dispenser.ejectNote();
+    // B is Shoot at full power
     } else if (m_controller.getBButtonPressed()) {
-      m_dispenser.spinUpShooterWheels();
+      m_dispenser.shootNoteImmediately();
     // Stop the motors if none of the buttons are pressed.
     } else {
       m_dispenser.stop();
     }
   }
 
-  /** This function is called once each time the robot enters test mode. */
+  // This function is called once each time the robot enters test mode.
   @Override
   public void testInit() {}
 
-  /** This function is called periodically during test mode. */
+  // This function is called periodically during test mode.
   @Override
   public void testPeriodic() {}
 
