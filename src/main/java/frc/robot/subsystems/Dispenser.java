@@ -12,6 +12,8 @@ package frc.robot.subsystems;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -20,7 +22,7 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 // This class controls the internal electronics of the Dispenser as well as providing
 // an interface for controlling it.
-public class Dispenser {
+public class Dispenser extends SubsystemBase {
     // We usually start with variables that will be accessible/shared by all code in our class.
     // These variables are called "members" of our class. The WPI Lib settings encourage us to
     // begin member variable names with "m_" (i.e. m_someNumber).
