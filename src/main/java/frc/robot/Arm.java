@@ -49,11 +49,13 @@ public class Arm implements Sendable {
     private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
     private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
     
-    // TODO: Add the two limit switches (as Digital Inputs) here.
-
+    
+    // Added two limit switches DI
+    private DigitalInput m_upLimitSwitch;
+    private DigitalInput m_downLimitSwitch;
     // The following is just for simulation and debugging
     private SingleJointedArmSim m_simulatedArm;
-    private final double armLengthInMeters = 1.0; // TDOD: Update this with correct length.
+    private final double armLengthInMeters = 0.77; // Updated with correct length.
     private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
     private final double ammReduction = 5 * 3 * 6; // 3 stage of 5:1 and a 6:1 chain reduction.
     private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
@@ -72,7 +74,9 @@ public class Arm implements Sendable {
         m_hexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         // TODO: Assign the Digital Input port numbers here.
-
+        m_upLimitSwitch = new DigitalInput(0);
+        m_downLimitSwitch = new DigitalInput(0);
+        
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
             ammReduction,
@@ -106,17 +110,24 @@ public class Arm implements Sendable {
     public Rotation2d getCurrentArmPosition() {
         // Read the value from the encoder.
         Rotation2d readingAngle = Rotation2d.fromRotations(m_hexBoreEncoder.get());
-        // The encoder's zero value does not always match the arm's zero, so apply the offest.
+        // The encoder's zero value does not always match the arm's zero, so apply the offset.
         Rotation2d actualAngle = readingAngle.minus(m_encoderOffset);
         return actualAngle;
     }
 
-    public void getDownLimitSwitchPressed() {
+    public boolean getDownLimitSwitchPressed() {
         // TODO: implement with actual limit switch
-        //return m_downLimitSwitch.get();
+        boolean isLimitSwitchPressed = m_downLimitSwitch.get();
+        return isLimitSwitchPressed;
+        
     }
 
     // TODO: Create a getUpLimitSwitchPressed(), similiar to above.
+    public boolean getUpLimitSwitchPressed() {
+        boolean isLimitSwitchPressed = m_upLimitSwitch.get();
+        return isLimitSwitchPressed;
+        
+    }
 
     // Call this every iteration to update the motor values.
     // Returns false if there is an issue with the arm.
@@ -131,8 +142,14 @@ public class Arm implements Sendable {
         // If either limit switch is set (indicating it is pressed), check if the totalMotorOutput is
         // in that direction (i.e. positive for the front limit switch and negative for the back one) and change
         // the totalMotorOutput to zero. Don't change it to zero for the other direction.
+        if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
+            totalMotorOutput = 0;
+        } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
+            totalMotorOutput = 0;
+        }
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
+        
         return true;
     }
 
