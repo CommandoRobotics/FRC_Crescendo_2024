@@ -3,7 +3,7 @@
 
 // This line states that the code in this file is part of our FRC Robot's package.
 // The FRC package is something the RoboRio code looks for so it can run our code.
-package frc.robot;
+package frc.robot.subsystems;
 
 // The imports include classes from various code libraries.
 // They contain prewritten code we can use to make our job easier.
