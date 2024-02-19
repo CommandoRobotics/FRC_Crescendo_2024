@@ -206,4 +206,25 @@ public class Dispenser extends SubsystemBase {
         lowershooterMotor.set(0);
         
     }
+
+    // The following sends information about this subsystem to the Smart Dashboard.
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        super.initSendable(builder);
+        builder.addDoubleProperty("intakePower", this::dashboardGetIntakeMotorPower, null);
+        builder.addDoubleProperty("shooterUppperPower", this::dashboardGetShooterUpperMotorPower, null);
+        builder.addDoubleProperty("shooterLowerPower", this::dashboardGetShooterLowerMotorPower, null);
+    }
+
+    public double dashboardGetIntakeMotorPower() {
+        return m_intakeMotor.get();
+    }
+
+    public double dashboardGetShooterUpperMotorPower() {
+        return uppershooterMotor.get();
+    }
+
+    public double dashboardGetShooterLowerMotorPower() {
+        return lowershooterMotor.get();
+    }
 }
