@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Arm;
+import frc.robot.subsystems.Arm;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
