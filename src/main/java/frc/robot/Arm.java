@@ -74,8 +74,8 @@ public class Arm implements Sendable {
         m_hexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         // TODO: Assign the Digital Input port numbers here.
-        m_upLimitSwitch = new DigitalInput(0);
-        m_downLimitSwitch = new DigitalInput(0);
+        m_upLimitSwitch = new DigitalInput(2);
+        m_downLimitSwitch = new DigitalInput(3);
         
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
