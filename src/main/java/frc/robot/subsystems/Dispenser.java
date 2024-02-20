@@ -3,7 +3,7 @@
 
 // This line states that the code in this file is part of our FRC Robot's package.
 // The FRC package is something the RoboRio code looks for so it can run our code.
-package frc.robot;
+package frc.robot.subsystems;
 
 // The imports include classes from various code libraries.
 // They contain prewritten code we can use to make our job easier.
@@ -12,6 +12,8 @@ package frc.robot;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -20,7 +22,7 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 // This class controls the internal electronics of the Dispenser as well as providing
 // an interface for controlling it.
-public class Dispenser {
+public class Dispenser extends SubsystemBase {
     // We usually start with variables that will be accessible/shared by all code in our class.
     // These variables are called "members" of our class. The WPI Lib settings encourage us to
     // begin member variable names with "m_" (i.e. m_someNumber).
@@ -73,68 +75,53 @@ public class Dispenser {
         // we think of positive speeds as brining in a Note, but the motor is rotate such that positive
         // would normally spit the Note out.
         m_intakeMotor.setInverted(true);
-        uppershooterMotor.setInverted(true);
+        uppershooterMotor.setInverted(true);        
         
-
-        
-        // CAN IDs and only one will be Inverted since the shooter wheels spin in opposite directions.
-    
+        // Create the beam break objects.
+        m_intakeBeamBreak = new DigitalInput(6);
+        // TODO create the index and shooter beam break sesnsors similiar
+        // to this one, but they will need their own ID numbers. See the
+        // Programming tab our FRC Design Reference for the table identifing
+        // where each Digital Input connects.
     }
 
+    // Return true if the Intake beam brake sensor sees a note.
     boolean intakeDetectsNote() {
+        // The intake sensor is high (true) when it sees the beam (light).
+        // When the beam is "broken" (Note blocking the light), the sensor is low (false).
         boolean detectorSeesLight = m_intakeBeamBreak.get();
-        return detectorSeesLight;
-     }
-
-     boolean indexerDetectsNote() {
+        return !detectorSeesLight; // If the detector sees the beam, there is no Note.
+    }
+   
+    // Return true if the Indexer beam brake sensor sees a note.
+    boolean indexerDetectsNote() {
         boolean detectorSeesLight = m_indexerBeamBreak.get();
         return detectorSeesLight;
-     }
-
-     boolean shooterDetectsNote() {
+    }
+   
+    // Return true if the Shooter beam brake sensor sees a note.
+    boolean shooterDetectsNote() {
         boolean detecterSeesLight = m_shooterBeamBreak.get();
         return detecterSeesLight;
-     }
+    }
 
-     boolean anySensorDetectsNote() {
+    // This function returns true if there is a note anywhere in the dispenser,
+    // or false if it is empty.
+    // Although each of the "...DetectsNote()" functions could be called individually,
+    // this single function helps simplify code where we need to know about all of the
+    // beam break sensors at once.
+    boolean anySensorDetectsNote() {
         if (intakeDetectsNote()) {
-            return true;
+            return true; // Note in intake
         } else if (indexerDetectsNote()) {
-            return true;
+            return true; // Note in indexer
         } else if (shooterDetectsNote()) {
-            return true;
+            return true; // Note in shooter
         } else {
-            return false;
+            return false; // No Note detected
         }
-     }
+    }
 
-     public void autoIntake() {
-        if (indexerDetectsNote()) {
-            m_intakeMotor.set(0);
-        } else {
-            intakeNote();
-        }
-     }
-
-     public void ejectNote() {
-        m_intakeMotor.set(-0.5);
-        uppershooterMotor.set(-0.5);
-        lowershooterMotor.set(-0.5);
-     }
-
-     void ejectUntilEmpty() {
-        if (anySensorDetectsNote()) {
-            ejectNote();
-        } else {
-            spinUpShooterWheels();
-        }
-     }
-
-     void feedShooter() {
-        if (anySensorDetectsNote()) {
-            shootNoteImmediately();
-        }
-     }
     // This function runs the motors to pull in a Note (but not shoot it yet).
     public void intakeNote() {
         // Turn the intake wheels at 50% (0.5) speed.
@@ -142,6 +129,38 @@ public class Dispenser {
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
         
+    }
+
+    // This function runs the intake motors until a Note is stored in our index area.
+    // When we have a note stored, it turns off the intake motors so we do not accidently
+    // intake another Note.
+    public void autoIntake() {
+        if (indexerDetectsNote()) {
+            // Note is in indexer.
+            m_intakeMotor.set(0);
+        } else {
+            // No Note yet
+            intakeNote();
+        }
+    }
+
+    // This function runs the motors in reverse to get rid of a note without shooting it.
+    // An example of needing this is if we accidently intake a second Note.
+    public void ejectNote() {
+        m_intakeMotor.set(-0.5);
+        uppershooterMotor.set(-0.5);
+        lowershooterMotor.set(-0.5);
+    }
+
+    // This function runs all the motors in reverse if there is a Note anywhere in the dispenser. When there are no notes in the dispenser, it turns off the intake and resumes spinning up the shooter motors.
+    void ejectUntilEmpty() {
+        if (anySensorDetectsNote()) {
+            // Still have a Note, keep trying to eject.
+            ejectNote();
+        } else {
+            // No notes in the dispenser, so we can stop ejecting.
+            spinUpShooterWheels();
+        }
     }
 
     // This function turns on all the motors to shoot the Note.
@@ -159,6 +178,13 @@ public class Dispenser {
         lowershooterMotor.set(1.0);
         
 
+    }
+
+    // This function runs the intake motors to push the Note through the shooter, until the Note is fully out. Then it turns off the intake motors, but keeps the shooter motors spinning.
+    void feedShooter() {
+        if (anySensorDetectsNote()) {
+            shootNoteImmediately();
+        }
     }
 
     // This function runs the shooter motors, while keeping the intake system stopped.
@@ -179,5 +205,26 @@ public class Dispenser {
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
         
+    }
+
+    // The following sends information about this subsystem to the Smart Dashboard.
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        super.initSendable(builder);
+        builder.addDoubleProperty("intakePower", this::dashboardGetIntakeMotorPower, null);
+        builder.addDoubleProperty("shooterUppperPower", this::dashboardGetShooterUpperMotorPower, null);
+        builder.addDoubleProperty("shooterLowerPower", this::dashboardGetShooterLowerMotorPower, null);
+    }
+
+    public double dashboardGetIntakeMotorPower() {
+        return m_intakeMotor.get();
+    }
+
+    public double dashboardGetShooterUpperMotorPower() {
+        return uppershooterMotor.get();
+    }
+
+    public double dashboardGetShooterLowerMotorPower() {
+        return lowershooterMotor.get();
     }
 }
