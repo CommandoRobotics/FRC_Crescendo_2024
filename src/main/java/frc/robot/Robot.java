@@ -111,7 +111,6 @@ public class Robot extends TimedRobot
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_aim.update();
     m_simulatedYaw = Rotation2d.fromRadians(m_aim.getDesiredYawInDegrees());
 
     // Update the simluation with our new position.
@@ -135,7 +134,6 @@ public class Robot extends TimedRobot
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_aim.update();
     m_simulatedYaw  = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegrees());
 
     // Update the simluation with our new position.
