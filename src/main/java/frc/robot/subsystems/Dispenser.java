@@ -61,9 +61,9 @@ public class Dispenser extends SubsystemBase {
         uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
         lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
 
-        m_intakeBeamBreak = new DigitalInput(0);
-        m_indexerBeamBreak = new DigitalInput(1);
-        m_shooterBeamBreak = new DigitalInput(2);
+        m_intakeBeamBreak = new DigitalInput(6);
+        m_indexerBeamBreak = new DigitalInput(7);
+        m_shooterBeamBreak = new DigitalInput(9);
 
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
@@ -77,12 +77,6 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.setInverted(true);
         uppershooterMotor.setInverted(true);        
         
-        // Create the beam break objects.
-        m_intakeBeamBreak = new DigitalInput(6);
-        // TODO create the index and shooter beam break sesnsors similiar
-        // to this one, but they will need their own ID numbers. See the
-        // Programming tab our FRC Design Reference for the table identifing
-        // where each Digital Input connects.
     }
 
     // Return true if the Intake beam brake sensor sees a note.
