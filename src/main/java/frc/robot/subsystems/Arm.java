@@ -5,12 +5,13 @@
 
 // This line states that the code in this file is part of our FRC Robot's package.
 // The FRC package is something the RoboRio code looks for so it can run our code.
-package frc.robot;
+package frc.robot.subsystems;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.MathUtil;
 // The imports include classes from various code libraries.
 // They contain prewritten code we can use to make our job easier.
 // The order does not affect the program, but we usually place the libraries from WPI first,
@@ -43,22 +44,23 @@ public class Arm implements Sendable {
     
     // Declare the Encoder
     private DutyCycleEncoder m_hexBoreEncoder; // This is on the hex shaft of the arm.
-    private final Rotation2d m_encoderOffset = Rotation2d.fromRotations(0.0); // TODO: Determine actual encoddr offset.
+    private final Rotation2d m_encoderOffset = Rotation2d.fromRotations(0.0); // TODO: Determine actual encoder offset.
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
 
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
-    private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, 0.25, 0, 0); // TODO: Tune this with actual values
+    private final PIDController m_armPID = new PIDController(0.8, .001, 0.01); // TODO: Tune this PID
 
     // The following is just for simulation and debugging
     private SingleJointedArmSim m_simulatedArm;
     private final double armLengthInMeters = 1.0; // TDOD: Update this with correct length.
     private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
-    private final double ammReduction = 5 * 3 * 6; // 3 stage of 5:1 and a 6:1 chain reduction.
+    private final double armReduction = 5 * 4 * 2 * 3; // Max planetary 5:1, 4:1, 2:1 and a 3:1 chain reduction.
     private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
-    private final Rotation2d maxPosition = Rotation2d.fromDegrees(135);
+    private final Rotation2d maxPosition = Rotation2d.fromDegrees(90);
     private DutyCycleEncoderSim m_simulatedEncoder;
     private double m_debuggingLastPIDOutput;
     private double m_debbugingLastFeedForwardOutput;
+    private double m_debuggingLastCommandedTotalMotorOutput;
     private boolean m_testUp;
 
     // Constructor
@@ -73,7 +75,7 @@ public class Arm implements Sendable {
 
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
-            ammReduction,
+            armReduction,
             SingleJointedArmSim.estimateMOI(armLengthInMeters, armMassInKilograms),
             armLengthInMeters,
             minPosition.getRadians(),
@@ -85,6 +87,7 @@ public class Arm implements Sendable {
         m_debbugingLastFeedForwardOutput = 0;
         m_debuggingLastPIDOutput = 0.0;
         m_testUp = true;
+        m_debuggingLastCommandedTotalMotorOutput = 0.0;
     }
 
     // Sets the motors to brake mode and stop them.
@@ -123,26 +126,28 @@ public class Arm implements Sendable {
     // Returns false if there is an issue with the arm.
     // DO NOT use autoControl and manual control at the same time.
     public boolean autoControl() {
-        double feedForwardOutput = m_armFeedFoward.calculate(m_desiredAngle.getRadians(), 1.0);
+        double feedForwardOutput = m_armFeedFoward.calculate(getCurrentArmPosition().getRadians(), 1.0);
         m_debbugingLastFeedForwardOutput = feedForwardOutput;
         double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), m_desiredAngle.getRadians());
         m_debuggingLastPIDOutput = pidOutput;
         double totalMotorOutput = feedForwardOutput + pidOutput;
+        // Make sure we do not set the motors beyond what they can actually do.
+        totalMotorOutput = MathUtil.clamp(totalMotorOutput, -1.0, 1.0);
+        m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
         return true;
     }
 
     public void simulationPeriodic(double timeSinceLastCall) {
-        m_simulatedArm.setInput(m_leftMotor.get());
-        //m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
+        m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
         m_simulatedArm.update(timeSinceLastCall);
         m_simulatedEncoder.setDistance(m_simulatedArm.getAngleRads());
-        // RoboRioSim.setVInVoltage(
-        //     BatterySim.calculateDefaultBatteryLoadedVoltage(
-        //         m_simulatedArm.getCurrentDrawAmps()
-        //     )
-        // );
+        RoboRioSim.setVInVoltage(
+            BatterySim.calculateDefaultBatteryLoadedVoltage(
+                m_simulatedArm.getCurrentDrawAmps()
+            )
+        );
     }
 
     @Override
@@ -153,6 +158,8 @@ public class Arm implements Sendable {
       builder.addDoubleProperty("motorCurrentVoltage", this::dashboardGetArmVoltage, null);
       builder.addDoubleProperty("FeedForwardOutput", this::dashboardGetLastFeedForwardOutput, null);
       builder.addDoubleProperty("PIDOutput", this::dashboardGetLastPIDOutput, null);
+      builder.addDoubleProperty("commandedMotorOutput", this::dashboardGetLastCommandedTotalMotorOutput, null);
+      builder.addDoubleProperty("batteryVoltage", this::dashboardGetBatteryVoltage, null);
     }
 
     double dashboardGetDesiredtArmPositionInDegrees() {
@@ -164,7 +171,8 @@ public class Arm implements Sendable {
     }
 
     double dashboardGetArmVoltage() {
-        return m_leftMotor.get() * 12.0;
+        return m_leftMotor.get() * 12;
+        //return m_leftMotor.get() * RobotController.getBatteryVoltage();
     }
 
     double dashboardGetLastPIDOutput() {
@@ -175,11 +183,19 @@ public class Arm implements Sendable {
         return m_debbugingLastFeedForwardOutput;
     }
 
+    double dashboardGetLastCommandedTotalMotorOutput() {
+        return m_debuggingLastCommandedTotalMotorOutput;
+    }
+
+    double dashboardGetBatteryVoltage() {
+        return RobotController.getBatteryVoltage();
+    }
+
     // Test raising and lowering the arm
     // To run this test, call it in autonomousPeriodic
     public void test() {
-        double current = m_desiredAngle.getDegrees();
-        if (m_testUp && current >= 89.9) {
+        double current = getCurrentArmPosition().getDegrees();
+        if (m_testUp && (current >= 89.9)) {
             // Already at top, go down.
             m_testUp = false;
             setAngleInDegrees(0);
@@ -188,6 +204,11 @@ public class Arm implements Sendable {
             m_testUp = true;
             setAngleInDegrees(90);
         }
+        autoControl();
+    }
+
+    public void upTest() {
+        setAngleInDegrees(90);
         autoControl();
     }
 }
