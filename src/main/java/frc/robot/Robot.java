@@ -29,7 +29,7 @@ public class Robot extends TimedRobot
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
 
-  private final AutoAim m_aim = new AutoAim();
+  private final Positioning m_positioning = new Positioning();
 
   // Used for simulation
   private double m_simulatedX; // Simulated X position (meters forward) on the field.
@@ -111,8 +111,8 @@ public class Robot extends TimedRobot
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_aim.update();
-    m_simulatedYaw = Rotation2d.fromRadians(m_aim.getDesiredYawInDegrees());
+    m_positioning.update();
+    m_simulatedYaw = m_positioning.getPose().getRotation();
 
     // Update the simluation with our new position.
     m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
@@ -135,8 +135,8 @@ public class Robot extends TimedRobot
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_aim.update();
-    m_simulatedYaw  = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegrees());
+    m_positioning.update();
+    m_simulatedYaw  = m_positioning.getPose().getRotation();
 
     // Update the simluation with our new position.
     m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);

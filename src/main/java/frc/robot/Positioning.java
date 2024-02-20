@@ -1,114 +1,218 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import frc.robot.Constants;
 
+// Provides the position of the robot using Limelight/AprilTags.
+// Positions are provided relative to the WPI Blue Origin.
+// https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
+public class Positioning implements Sendable {
+    
+    // The following store the "tv" value. This indicates if Limelight sees a target.
+    // A value of 1 means it sees a target, whereas 0 means it does not.
+    private double targetValid1; // Stores the "tv" value from Limelight 1.
+    private double targetValid2; // Stores the "tv" value from Limelight 2.
+    
+    // Create array to store botpose (robot location/direction) from the Limelight
+    // We will use the blue coordinate system, as this is a common one used by WPILib
+    // 
+    // Limelight provides 6 numbers:
+    // X: Meters along long edge of field. Positive is AWAY from blue driver station.
+    // Y: Meters along short edge of field. Positive is to the LEFT.
+    // Z: Meters above field. Remember, this is the camera's position.
+    // Roll: How left/right tilted the robot is (rarely used).
+    // Pitch: How forward/backwards tilted the robot is (rarely used).
+    // Yaw: Rotation (left/right), positive is COUNTER-clockwise.
+    final int xIndex = 0;
+    final int yIndex = 1;
+    final int zIndex = 2;
+    final int rollIndex = 3;
+    final int pitchIndex = 4;
+    final int yawIndex = 5;
+    private double[] poseArrayCamera1; // Robot pose from Primary Limelight
+    private double[] poseArrayCamera2; // Robot pose form Back-up Limelight
 
-public class AutoAim implements Sendable {
+    // The following values will store the the determined values from this code.
+    private boolean lastValid; // Whether we had a valid tag to determine location.
+    private Pose2d lastPose; // Pose of the robot.
+    private Pose2d lastCameraPose2d; //
+    private double lastCameraZ; // For debugging
+    private double lastID; // April tag to determine this data.
 
-     double[] limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose").getDoubleArray(new double[6]);
+    // The following stores which April Tag the limelight is using for calculations
+    private double biggestTag1;
+    private double biggestTag2;
 
+    // Returns whether positioning sees a valid target.
+    // Call this before using any of the other calls.
+    // If this returns false, the other data may be old/wrong.
+    public boolean acquired() {
+        return lastValid;
+    }
 
-
-    private double lastX;
-    private double lastY;
-    private double lastYaw;
+    // Returns the location and direction of the robot according to WPI Blue origin.
+    // Units in Pose2d are Meters.
+    public Pose2d getPose() {
+        // TDOD: Use actual last values of X, Y, and Yaw Rotation.
+        return new Pose2d(0, 0, Rotation2d.fromDegrees(0));
+    }
 
     //gets most previous x position
-    public double getLastX() {
-        lastX = limelight[0];
-        return lastX;
+    public double getX() {
+        return lastPose.getX();
     }
 
     //get most previous y position
-    public double getLastY(){
-        lastY = limelight[1];
-        return lastY;
+    public double getY(){
+        return lastPose.getY();
     }
+
     //gets most previous YAW position
-        public double getLastYaw() {
-        lastYaw = limelight[5];
-        return lastYaw;
+    public double getYaw() {
+        return lastPose.getRotation().getDegrees();
     }
 
-    // Hey Mason,
-    // It looks like the getDoubleArray() grabs the current value of the Network Tables, so to make this work, I had to add
-    // this update() function. You could either do this, or make this call as part of your getDesiredYawInDegrees.
-    // -Mr. Barber
+    // This needs to be called periodically so the robot location is updated.
     public void update() {
-        limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose").getDoubleArray(new double[6]);
-    }
+        // Network tables associated with each Limelight
+        NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight");
+        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limeligh-backup");
 
-    // Hey Mason,
-    // This is function is actually returning Radians, not degrees.
-    // Also, this gets the desired yaw in relation to the origin (0,0) of the field, not the target.
-    // You might want to add getDesiredYawRedSpeaker(), getDesiredRawBlueSpeaker(), etc... functions
-    // that all might call a commmon getDesiredYaw(targetX, targetY).
-    // One more thing, I think the fron of the robot is pointing the opposite direction from where it should be.
-    // -Mr. Barber
-    public double getDesiredYawInDegrees() {
-       double initXPos = getLastX();
-       double initYPos = getLastY();
-       double desiredYaw = Math.atan(initYPos/initXPos);
-        return desiredYaw;
-    }
+        // Get whether the Limelights see valid data.
+        final double default_value = -1; // This value is returned if the Limelight is not connected.
+        targetValid1 = limelightTable1.getEntry("tv").getDouble(default_value);
+        targetValid2 = limelightTable2.getEntry("tv").getDouble(default_value);
 
-    public double getDesiredShooterAngleInDegrees(boolean isRedAlliance){
-        if (isRedAlliance==true){
-            double xDistance = Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
-            double yDistance = Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
-            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
-            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
-            return desiredAngle;
+        // Get which April Tag ID the limelight is using to calculate values.
+        biggestTag1 = limelightTable1.getEntry("tid").getDouble(default_value);
+        biggestTag2 = limelightTable2.getEntry("tid").getDouble(default_value);
+
+        // Get calculated botpose
+        poseArrayCamera1 = limelightTable1.getEntry("botpose_wpiblue").getDoubleArray(new double[6]);
+        poseArrayCamera2 = limelightTable2.getEntry("botpose_wpiblue").getDoubleArray(new double[6]);
+
+        // Get the data from whichever Limelight has valid data
+        if (trustLimelight1()) {
+            // Limelight 1 saw valid data, use its values.
+            lastValid = true;
+            Pose2d cameraPose = parsePose(poseArrayCamera1);
+            lastPose = translateToRobotPose(cameraPose, Constants.kLimelight1Pose);
+            lastID = biggestTag1;
+        } else if (trustLimelight2()) {
+            // Limelight 2 saw valid data (but Limelight 1 did not). Use this data.
+
+            // TODO: Gather the values. Similiar to limelight1 above,
+            //       but change to use the second camera's data.
+
         } else {
-            double xDistance = -Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
-            double yDistance = -Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
-            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
-            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
-            return desiredAngle;   
+            // Neither camera has valid data.
+            // Retain the last known data, but mark the data as invalid.
+            lastValid = false;
         }
     }
 
-    public boolean legalToShoot(boolean isRedAlliance){ //returns true if we are not in opposing alliance's wing
-        boolean isLegalToShoot;
-        double currentXPos = getLastX();
-        if(isRedAlliance == true && currentXPos <= -Constants.WINGDISTANCEFROMCENTER){//returns false if we are red alliance and in Blue ALliance's wing
-            isLegalToShoot = false;
-        } 
-        else if (isRedAlliance == false && currentXPos >= Constants.WINGDISTANCEFROMCENTER){   //returns false if we are blue alliance and in Red Alliance's wing
-            isLegalToShoot = false;
-        }   
-        else {
-            isLegalToShoot = true;
+    // Returns whether or not to trust the Limelight data.
+    // tv: The Target Value from the Limelight
+    // tid: ID value of the April tag it sees.
+    // z: Height the camera thinks it is above the field.
+    private boolean limelightHasValidPose(double tv, double tid, double z) {
+        // If the tv value is less than one, we have invalid data
+        if (tv < 1) {
+            return false;
         }
-            return isLegalToShoot;
+
+        // This year's game uses will accept April tags 1-16. Anything else is wrong.
+        if (tid < 1) {
+            return false;
+        } else if (tid > 16) {
+            return false;
+        }
+
+        // When the Limelight can't compute a pose, it uses zeros for all locations.
+        // Since the Z should be the height of the camera, a value of 0 means either
+        // The Limelight data is wrong, or our camera broke off and is on the floor.
+        if (z == 0) {
+            return false;
+        }
+
+        // If nothing above indicated bad data, then we will trust it.
+        return true;
     }
 
-    public boolean safeToShoot(boolean isRedAlliance){
-        boolean isSafeToShoot = true;
-        return isSafeToShoot;
+    private boolean trustLimelight1() {
+        return limelightHasValidPose(targetValid1, biggestTag1, poseArrayCamera1[zIndex]);
     }
 
-    
-    
+    private boolean trustLimelight2() {
+        // TODO: Implement this. See trustLimelight1 as example and change appropriately.
+        return false;
+    }
 
+    // This gets Pose (location/rotation) data from the Limelight's BotPose Array
+    // and returns it as a WPI Pose2D object.
+    private Pose2d parsePose(double[] botposeArray) {
+        double x = botposeArray[xIndex];
+        double y = botposeArray[yIndex];
+        double r = botposeArray[yawIndex];
+        return new Pose2d(x, y, Rotation2d.fromDegrees(r));
+    }
 
+    // This adjusts the pose
+    private Pose2d translateToRobotPose(Pose2d cameraDataPose, Pose2d cameraRelativePose) {
+        double adjustedX = cameraDataPose.getX() + cameraRelativePose.getX();
+        double adjustedY = cameraDataPose.getY() + cameraRelativePose.getY();
+        Rotation2d adjustedRotation = cameraDataPose.getRotation().plus(cameraRelativePose.getRotation());
+        return new Pose2d(adjustedX, adjustedY, adjustedRotation);
+    }
 
-
+    // This function updates the Smart Dashboard with variables so we can debug.
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("AutoAim");
-        builder.addDoubleProperty("desiredYaw", this::getDesiredYawInDegrees, null);
-       // builder.addDoubleProperty("desiredShootAngle", this::getDesiredShooterAngleInDegrees, null);
-
-        builder.addDoubleProperty("lastX", this::getLastX, null);
+        builder.addDoubleProperty("lastX", this::getX, null);
+        builder.addDoubleProperty("lastY", this::getY, null);
+        builder.addDoubleProperty("lastYaw", this::getYaw, null);
+        builder.addDoubleProperty("lastID", this::dashboardGetAprilTagID, null);
+        builder.addBooleanProperty("trust1", this::trustLimelight1, null);
+        builder.addBooleanProperty("trust2", this::trustLimelight2, null);
+        builder.addDoubleProperty("camera1X", this::dashboardGetLimelight1X, null);
+        builder.addDoubleProperty("camera1Y", this::dashboardGetLimelight1Y, null);
+        builder.addDoubleProperty("camera1Yaw", this::dashboardGetLimelight1Yaw, null);
+        builder.addDoubleProperty("camera2X", this::dashboardGetLimelight2X, null);
+        builder.addDoubleProperty("camera2Y", this::dashboardGetLimelight2Y, null);
+        builder.addDoubleProperty("camera2Yaw", this::dashboardGetLimelight2Yaw, null);
     }
 
+    // Return the current April Tag ID we are using.
+    private double dashboardGetAprilTagID() {
+        return lastID;
+    }
 
+    // Return the position that Limelight1 thinks we are at.
+    private double dashboardGetLimelight1X() {
+        return translateToRobotPose(parsePose(poseArrayCamera1), Constants.kLimelight1Pose).getX();
+    }
+    private double dashboardGetLimelight1Y() {
+        return translateToRobotPose(parsePose(poseArrayCamera1), Constants.kLimelight1Pose).getX();
+    }
+    private double dashboardGetLimelight1Yaw() {
+        return translateToRobotPose(parsePose(poseArrayCamera1), Constants.kLimelight1Pose).getRotation().getDegrees();
+    }
 
+    private double dashboardGetLimelight2X() {
+        return translateToRobotPose(parsePose(poseArrayCamera2), Constants.kLimelight2Pose).getX();
+    }
+    private double dashboardGetLimelight2Y() {
+        return translateToRobotPose(parsePose(poseArrayCamera2), Constants.kLimelight2Pose).getX();
+    }
+    private double dashboardGetLimelight2Yaw() {
+        return translateToRobotPose(parsePose(poseArrayCamera2), Constants.kLimelight2Pose).getRotation().getDegrees();
+    }
 
 
 }
