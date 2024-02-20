@@ -34,21 +34,6 @@ public class AutoAim implements Sendable {
         return lastYaw;
     }
 
-    // Hey Mason,
-    // It looks like the getDoubleArray() grabs the current value of the Network Tables, so to make this work, I had to add
-    // this update() function. You could either do this, or make this call as part of your getDesiredYawInDegrees.
-    // -Mr. Barber
-    public void update() {
-        limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose").getDoubleArray(new double[6]);
-    }
-
-    // Hey Mason,
-    // This is function is actually returning Radians, not degrees.
-    // Also, this gets the desired yaw in relation to the origin (0,0) of the field, not the target.
-    // You might want to add getDesiredYawRedSpeaker(), getDesiredRawBlueSpeaker(), etc... functions
-    // that all might call a commmon getDesiredYaw(targetX, targetY).
-    // One more thing, I think the fron of the robot is pointing the opposite direction from where it should be.
-    // -Mr. Barber
     public double getDesiredYawInDegrees() {
        double initXPos = getLastX();
        double initYPos = getLastY();
