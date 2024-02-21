@@ -47,12 +47,15 @@ public class Arm implements Sendable {
     private final Rotation2d m_encoderOffset = Rotation2d.fromRotations(0.0); // TODO: Determine actual encoder offset.
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
 
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, 0.25, 0, 0); // TODO: Tune this with actual values
-    private final PIDController m_armPID = new PIDController(0.8, .001, 0.01); // TODO: Tune this PID
-
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
+    private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
+    
+    // Added two limit switches DI
+    private DigitalInput m_upLimitSwitch;
+    private DigitalInput m_downLimitSwitch;
     // The following is just for simulation and debugging
     private SingleJointedArmSim m_simulatedArm;
-    private final double armLengthInMeters = 1.0; // TDOD: Update this with correct length.
+    private final double armLengthInMeters = 0.77; // Updated with correct length.
     private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
     private final double armReduction = 5 * 4 * 2 * 3; // Max planetary 5:1, 4:1, 2:1 and a 3:1 chain reduction.
     private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
@@ -72,7 +75,9 @@ public class Arm implements Sendable {
         m_rightMotor.setInverted(true);
         m_hexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
-
+        m_upLimitSwitch = new DigitalInput(2);
+        m_downLimitSwitch = new DigitalInput(3);
+        
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
             armReduction,
@@ -117,9 +122,19 @@ public class Arm implements Sendable {
     public Rotation2d getCurrentArmPosition() {
         // Read the value from the encoder.
         Rotation2d readingAngle = Rotation2d.fromRotations(m_hexBoreEncoder.get());
-        // The encoder's zero value does not always match the arm's zero, so apply the offest.
+        // The encoder's zero value does not always match the arm's zero, so apply the offset.
         Rotation2d actualAngle = readingAngle.minus(m_encoderOffset);
         return actualAngle;
+    }
+
+    public boolean getDownLimitSwitchPressed() {
+        boolean isLimitSwitchPressed = m_downLimitSwitch.get();
+        return isLimitSwitchPressed;        
+    }
+
+    public boolean getUpLimitSwitchPressed() {
+        boolean isLimitSwitchPressed = m_upLimitSwitch.get();
+        return isLimitSwitchPressed;
     }
 
     // Call this every iteration to update the motor values.
@@ -134,8 +149,14 @@ public class Arm implements Sendable {
         // Make sure we do not set the motors beyond what they can actually do.
         totalMotorOutput = MathUtil.clamp(totalMotorOutput, -1.0, 1.0);
         m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
+        if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
+            totalMotorOutput = 0;
+        } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
+            totalMotorOutput = 0;
+        }
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
+        
         return true;
     }
 
