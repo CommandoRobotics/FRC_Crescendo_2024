@@ -5,6 +5,8 @@
 package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -14,10 +16,14 @@ public class RobotContainer {
 
   // Subsystems
   SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
+  ArmSubsystem armSubsystem = new ArmSubsystem();
+  DispenserSubsystem dispenserSubsystem = new DispenserSubsystem();
 
   // Controllers
   private final CommandXboxController driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+      new CommandXboxController(0);
+  private final CommandXboxController armController =
+      new CommandXboxController(1);
 
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -27,6 +33,14 @@ public class RobotContainer {
       swerveSubsystem.driveCommand(() -> -driverController.getLeftY(),
                                    () -> -driverController.getLeftX(), 
                                    () -> driverController.getRightY()));
+
+    armSubsystem.setDefaultCommand(
+        armSubsystem.armCommand(() -> armController.getLeftY())); 
+        
+    
+
+    
+
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
   
     // Configure the trigger bindings
@@ -37,6 +51,8 @@ public class RobotContainer {
 
     // Driver A: Run the chassis at a set speed forwards
     driverController.a().onTrue(swerveSubsystem.driveCommand(() -> 0.3, () -> 0, () -> 0));
+   // armController.a().whileTrue(dispenserSubsystem.driveCommand(() -> 0.3, () -> 0, () -> 0));
+
 
   }
 

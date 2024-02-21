@@ -7,6 +7,7 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,6 +22,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
@@ -28,6 +30,9 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+
+import java.util.function.DoubleSupplier;
+
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.SparkMaxAlternateEncoder;
@@ -199,4 +204,26 @@ public class ArmSubsystem extends SubsystemBase {
     public void periodic() {
       // This method will be called once per scheduler run
     }
+
+    public Command armCommand(DoubleSupplier xBoxPowerArm) 
+  {
+    return run(() -> {
+    double armInput = xBoxPowerArm.getAsDouble();
+    double stickPower = -1.0 * MathUtil.applyDeadband(armInput, 0.02);
+    // Set the arm to this power.
+    double m_currentSetPointInDegrees = stickPower;
+    setAngleInDegrees(m_currentSetPointInDegrees);
+    autoControl();
+    });
+  }
 }
+
+/*    // Read the XBox stick value. Multiply by negative one because XBox controls are inverted (up is negative).
+    double xBoxPower = -1.0 * m_controller.getLeftY();
+    // Turn off the motors if the controller is close enough to center.
+    double stickPower = MathUtil.applyDeadband(xBoxPower, 0.02);
+    // Set the arm to this power.
+    m_currentSetPointInDegrees += stickPower;
+    m_arm.setAngleInDegrees(m_currentSetPointInDegrees);
+    m_arm.autoControl();
+    //m_arm.manuallyControlArm(stickPower); */
