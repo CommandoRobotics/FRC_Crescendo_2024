@@ -22,7 +22,7 @@ public class Positioning implements Sendable {
     // We will use the blue coordinate system, as this is a common one used by WPILib
     // 
     // Limelight provides 6 numbers:
-    // X: Meters along long edge of field. Positive is AWAY from blue driver station.
+    // X: Meters along long edge of field. Positive is AWAY frobm blue driver station.
     // Y: Meters along short edge of field. Positive is to the LEFT.
     // Z: Meters above field. Remember, this is the camera's position.
     // Roll: How left/right tilted the robot is (rarely used).
@@ -105,9 +105,11 @@ public class Positioning implements Sendable {
             lastID = biggestTag1;
         } else if (trustLimelight2()) {
             // Limelight 2 saw valid data (but Limelight 1 did not). Use this data.
-
-            // TODO: Gather the values. Similiar to limelight1 above,
-            //       but change to use the second camera's data.
+           // Added variables for second camera's data.
+            lastValid = true;
+            Pose2d cameraPose = parsePose(poseArrayCamera2);
+            lastPose = translateToRobotPose(cameraPose, Constants.kLimelight2Pose);
+            lastID = biggestTag2;
 
         } else {
             // Neither camera has valid data.
@@ -150,8 +152,10 @@ public class Positioning implements Sendable {
 
     private boolean trustLimelight2() {
         // TODO: Implement this. See trustLimelight1 as example and change appropriately.
-        return false;
+        return limelightHasValidPose(targetValid2, biggestTag2, poseArrayCamera2[zIndex]);
+        //return false;
     }
+
 
     // This gets Pose (location/rotation) data from the Limelight's BotPose Array
     // and returns it as a WPI Pose2D object.
