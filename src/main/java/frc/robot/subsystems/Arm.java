@@ -34,6 +34,8 @@ import com.revrobotics.SparkMaxAlternateEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkLimitSwitch;
 
+import frc.robot.Constants.ArmConstants;
+
 
 // This class controls the internal electronics of the arm as well as providing
 // an interface for controlling it.
@@ -118,6 +120,15 @@ public class Arm implements Sendable {
     public void setAngleInDegrees(double angleInDegrees) {
         m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
     }
+
+    // Uses the preset angle for intkaing from the floor.
+    public void setFloorIntake() {
+        setAngleInDegrees(ArmConstants.kFloorIntakeAngle);
+    }
+
+    // TODO: Create function for setting the Arm to the Source angle. See setFloorIntake function above for example.
+
+    // TODO: Create function for setting the Arm to the Amp angle. See setFloorIntake function above for example.
 
     public Rotation2d getCurrentArmPosition() {
         // Read the value from the encoder.
