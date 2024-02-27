@@ -21,8 +21,12 @@ public final class Constants {
 
   // Arm Constants - all angles in degrees, with zero meaning flat/down and 90 degrees arm straight up.
   public static class ArmConstants {
-    public static final int kFloorIntakeAngle = 0; // TODO: Tune this angle. The angle when intaking notes from ground.
-    public static final int kAmpAngle = 0; // TODO: Tune this angle. The angle when placing in the amp.
-    public static final int kSourceAngle = 0; // TODO: Tune this angle. The angle when intaking from the source.
+    public static final double kFloorIntakeAngle = 0; // TODO: Tune this angle. The angle when intaking notes from ground.
+    public static final double kAmpAngle = 89; // TODO: Tune this angle. The angle when placing in the amp.
+    public static final double kSourceAngle = 65; // TODO: Tune this angle. The angle when intaking from the source.
+    public static final boolean kLeftArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
+    public static final boolean kRightArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
+    public static final double kLeftArmEncoderOffsetInRotations = 0; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final double kRightArmEncoderOffsetInRotations = 0; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
 }
 }

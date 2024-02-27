@@ -48,7 +48,7 @@ public class Robot extends TimedRobot {
   // This function is called periodically during autonomous.
   @Override
   public void autonomousPeriodic() {
-
+    m_arm.test();
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
