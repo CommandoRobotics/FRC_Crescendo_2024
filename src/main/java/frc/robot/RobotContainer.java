@@ -8,8 +8,12 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RobotContainer {
 
@@ -35,7 +39,9 @@ public class RobotContainer {
                                    () -> driverController.getRightY()));
 
     armSubsystem.setDefaultCommand(
-        armSubsystem.armCommand(() -> armController.getLeftY())); 
+        armSubsystem.armCommand(() -> armController.getLeftY()));
+        
+      
         
     
 
@@ -45,6 +51,30 @@ public class RobotContainer {
   
     // Configure the trigger bindings
     configureBindings();
+
+
+
+   
+
+    //Y = shoot note IMMEDIATELY
+    armController.y()
+      .onTrue(new InstantCommand(dispenserSubsystem::shootNoteImmediately, dispenserSubsystem))
+      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+    
+    //a = spin up shooter 
+    armController.a()
+      .onTrue(new InstantCommand(dispenserSubsystem::spinUpShooterWheels, dispenserSubsystem))
+      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+    //b = intake note
+    armController.b()
+      .onTrue(new InstantCommand(dispenserSubsystem::intakeNote, dispenserSubsystem))
+      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+
+
+    
   }
 
   private void configureBindings() {

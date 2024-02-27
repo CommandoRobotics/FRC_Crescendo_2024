@@ -205,17 +205,16 @@ public class ArmSubsystem extends SubsystemBase {
       // This method will be called once per scheduler run
     }
 
-    public Command armCommand(DoubleSupplier xBoxPowerArm) 
-  {
-    return run(() -> {
-    double armInput = xBoxPowerArm.getAsDouble();
-    double stickPower = -1.0 * MathUtil.applyDeadband(armInput, 0.02);
-    // Set the arm to this power.
-    double m_currentSetPointInDegrees = stickPower;
-    setAngleInDegrees(m_currentSetPointInDegrees);
-    autoControl();
-    });
-  }
+    public Command armCommand(DoubleSupplier xBoxPowerArm) {
+        return run(() -> {
+            double armInput = xBoxPowerArm.getAsDouble();
+            double stickPower = -1.0 * MathUtil.applyDeadband(armInput, 0.02);
+            // Set the arm to this power.a
+            double m_currentSetPointInDegrees = stickPower;
+            setAngleInDegrees(m_currentSetPointInDegrees);
+            autoControl();
+        });
+    }
 }
 
 /*    // Read the XBox stick value. Multiply by negative one because XBox controls are inverted (up is negative).
