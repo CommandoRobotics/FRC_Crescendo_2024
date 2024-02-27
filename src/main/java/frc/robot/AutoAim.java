@@ -1,115 +1,90 @@
 package frc.robot;
 
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import frc.robot.Constants;
 
 // Handles calculations of robot/arm rotation when given current location.
 public class AutoAim implements Sendable {
-    boolean yawAligned = false; // Stores whether the last calculation deterimened yaw was good enough to shoot.
-    boolean pitchAligned = false; // Stores whether the last calculation deterimened arm was good enough to shoot.
+    boolean m_yawAligned = false; // Stores whether the last calculation deterimened yaw was good enough to shoot.
+    boolean m_pitchAligned = false; // Stores whether the last calculation deterimened arm was good enough to shoot.
 
+    // Returns the yaw to turn to based on current position.
+    // Inputs are based on the WPILib Blue coordinate system.
+    public double getDesiredYawInDegreesToSpeaker(double currentX, double currentY, boolean isBlueAlliance) {
+        // Set blue by default
+        double targetX = Constants.FieldElements.kBlueSpeakerX;
+        double targetY = Constants.FieldElements.kBlueSpeakerY;
+        if (!isBlueAlliance) {
+            targetX = Constants.FieldElements.kRedSpeakerX;
+            targetY = Constants.FieldElements.kRedSpeakerY;
+        }
+        // Compared to current location, find meters in X,Y from current position to target.
+        // Note: This may result in a negative value (meaning opposite direction).
+        double deltaX = targetX - currentX;
+        double deltaY = targetY - currentY;
 
-    // TODO: Remove all the Limelight code. Getting the position will now be handled in a separate object.
-     double[] limelight = NetworkTableInstance.getDefault().getTable("limelight").getEntry("botpose").getDoubleArray(new double[6]);
-
-
-    // TODO: Delete this. We will determine the robot location in Positioning, not AutoAim.
-    private double lastX;
-    private double lastY;
-    private double lastYaw;
-
-    // TODO: Delete this. We will determine the robot location in Positioning, not AutoAim.
-    //gets most previous x position
-    public double getLastX() {
-        lastX = limelight[0];
-        return lastX;
-    }
-
-    // TODO: Delete this. We will determine the robot location in Positioning, not AutoAim.
-    //get most previous y position
-    public double getLastY(){
-        lastY = limelight[1];
-        return lastY;
-    }
-
-    // TODO: Delete this. We will determine the robot location in Positioning, not AutoAim.
-    //gets most previous YAW position
-        public double getLastYaw() {
-        lastYaw = limelight[5];
-        return lastYaw;
-    }
-
-    // TODO: Rename this to getDesiredYawInDegreesToSpeaker with arguments of X,Y, and isBlueAlliance.
-    public double getDesiredYawInDegrees() {
-       double initXPos = getLastX();
-       double initYPos = getLastY();
-       double desiredYaw = Math.atan(initYPos/initXPos);
+        double desiredYaw = Math.atan(deltaY/deltaX);
         return desiredYaw;
     }
 
     // This function determines what angle we should turn to if we want to "shoot" into the Amp.
     public double getDesiredYawInDegreesToAmp(boolean isBlueAlliance) {
-        // TODO: Implement this function.
-        // Hint: It doesn't matter where our robot is. When we want to go to the Amp, we should just
-        //       turn to that side of the field.
-        return 0.0;
+        // Both amps are at 90° according to WPI Blue Origin
+        return 90.0;
     }
 
     // This function determines what angle we should turn to if we want to "intake" from the Source.
     public double getDesiredYawInDegreesToSource(boolean isBlueAlliance) {
-        // TODO: Implement this function. Remember, that our robot's back side intakes.
-        // Hint: It doesn't matter where our robot is. When we want to go to the Source, we should just
-        //       turn parallell to the source.
-        return 0.0;
+        if (isBlueAlliance) {
+            return 300.0;
+        } else {
+            return 240.0;
+        }
     }
 
     // This function returns if we are closer to the Amp than the speaker.
     // This function will be used to help determine what we want to do when the Driver says arm up.
-    public boolean isAmpCloser(double x, double y) {
-        // TODO: Implement this function. Calculate the distance to amp and speaker, then determine
-        //       if amp is closer.
-        return false;
+    public boolean isAmpCloser(double currentX, double currentY) {
+        // Just approximate by determinig whether we are on the Amp (audience) side, or Source (Scoring Table) side.
+
+        final double fieldWidthInMeters  = 8.21;
+        final double fieldSplit = fieldWidthInMeters / 2;
+        if (currentY < fieldSplit) {
+            // Origin is on source side
+            return false;
+        } else {
+            // Further side from origin is Amp side.
+            return true;
+        }
     }
 
     // This function returns the correct direction to turn if the driver has the arm fully up.
     // When the arm is fully up, we are either intaking from the Source, or placing in the Amp.
     // This automatically switches the rotation of the robot based on the closest of the two.
-    public boolean getDesiredYawInDegreesIfArmUp(double x, double y) {
-        // TODO: Implement this function. Hint: Call the functions above 
-        return false;
-    }
-
-    // TODO: Add X/Y arguments to this function so we can pass in the location from which ever Limelight sees an AprilTag. 
-    // TODO: Change the argument to isBlueAlliance, that is the default for WPILIB see the link below.
-    // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
-    public double getDesiredShooterAngleInDegrees(boolean isRedAlliance){
-        if (isRedAlliance==true){
-            double xDistance = Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
-            double yDistance = Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
-            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
-            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
-            return desiredAngle;
+    public double getDesiredYawInDegreesIfArmUp(double currentX, double currentY, boolean isBlueAlliance) {
+        if (isAmpCloser(currentX, currentY)) {
+            return getDesiredYawInDegreesToAmp(isBlueAlliance);
         } else {
-            double xDistance = -Constants.SPEAKERXFROMCENTER - getLastX(); //calculates x distance from speaker in meters
-            double yDistance = -Constants.SPEAKERYFROMCENTER - getLastY(); //calculates y distance from speaker in meters
-            double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2)); //combines the x and y components to get our displacement from the speaker
-            double desiredAngle = Math.atan(Constants.SPEAKERHEIGHT/displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
-            return desiredAngle;   
+            return getDesiredYawInDegreesToSource(isBlueAlliance);
         }
     }
 
-    // TODO: Change the argument to isBlueAlliance, that is the default for WPILIB see the link below.
-    // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
-    public boolean legalToShoot(boolean isRedAlliance){ //returns true if we are not in opposing alliance's wing
+    // Returns the estimated shooter angle in degrees.
+    public double getDesiredShooterAngleInDegrees(double currentX, double currentY, boolean isBlueAlliance){
+        double displacementFromSpeaker = shootingDistanceInMetersToSpeaker(currentX, currentY, isBlueAlliance);
+        double desiredAngle = Math.atan(Constants.FieldElements.kSpeakerHeight / displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
+        return desiredAngle;
+    }
+
+    // Returns true if we are not in the opposing alliance's wing.
+    public boolean legalToShoot(double currentX, double currentY, boolean isBlueAlliance){ //returns true if we are not in opposing alliance's wing
         boolean isLegalToShoot;
-        double currentXPos = getLastX();
-        if(isRedAlliance == true && currentXPos <= -Constants.WINGDISTANCEFROMCENTER){//returns false if we are red alliance and in Blue ALliance's wing
+        double bufferInMeters = 1.5; // Make sure entire body and bumpers are clear (even if rotated at an angle), and the referee can clearly see it.
+        if(isBlueAlliance == false && currentX < (Constants.FieldLines.kBlueWingLineX - bufferInMeters)){//returns false if we are red alliance and in Blue ALliance's wing
             isLegalToShoot = false;
         } 
-        else if (isRedAlliance == false && currentXPos >= Constants.WINGDISTANCEFROMCENTER){   //returns false if we are blue alliance and in Red Alliance's wing
+        else if (isBlueAlliance == true && currentX >= (Constants.FieldLines.kRedWingLineX + bufferInMeters)){   //returns false if we are blue alliance and in Red Alliance's wing
             isLegalToShoot = false;
         }   
         else {
@@ -118,22 +93,23 @@ public class AutoAim implements Sendable {
             return isLegalToShoot;
     }
 
-    // This function determines whether we will hit the stage if we shoot now.
-    // TODO: Add x/y arguments to this function.
-    public boolean safeToShoot(boolean isRedAlliance){
-        // TODO: Implement this function.
-        // Hint: Think of a line drawn between our robot and the speaker.
-        //       Think of the stage as a circle.
-        //       Google ways to determine if a line intersects a circle.
-        boolean isSafeToShoot = true;
-        return isSafeToShoot;
-    }
-
     // Returns the current distance from the speaker.
     // This can be used to help determine whether a shot is within range.
-    public double shootingDistanceInMetersToSpeaker(double x, double y, boolean isRedAlliance) {
-        // TODO: Implement this function, calculate the distance away from each speaker.
-        return 1000.0;
+    public double shootingDistanceInMetersToSpeaker(double currentX, double currentY, boolean isBlueAlliance) {
+        // Initially assume Blue Alliance
+        double targetX = Constants.FieldElements.kBlueSpeakerX;
+        double targetY = Constants.FieldElements.kBlueSpeakerY;
+        // Change target if Red Alliance (NOT blue).
+        if (!isBlueAlliance) {
+            targetX = Constants.FieldElements.kRedSpeakerX;
+            targetY = Constants.FieldElements.kRedSpeakerY;
+        }
+        
+        double xDistance = targetX - currentX; //calculates x distance from speaker in meters
+        double yDistance = targetY - currentY; //calculates y distance from speaker in meters
+
+        double displacementFromSpeaker = Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+        return displacementFromSpeaker;
     }
 
     // This function determines if we should "pull the trigger", our our robot is not ready.
@@ -141,8 +117,8 @@ public class AutoAim implements Sendable {
     // y: Y coordinates in Blue origin field.
     // yawInDegres: Robot's current yaw.
     // armAngleInDegres: Position of arm.
-    public boolean alignedEnoughToShoot(double x, double y, double yawInDegrees, double armAngleInDegrees, boolean isBlueAlliance) {
-        double distanceInMeters = shootingDistanceInMetersToSpeaker(x, y, isBlueAlliance);
+    public boolean alignedEnoughToShoot(double currentX, double currentY, double yawInDegrees, double armAngleInDegrees, boolean isBlueAlliance) {
+        double distanceInMeters = shootingDistanceInMetersToSpeaker(currentX, currentY, isBlueAlliance);
         
         // Determine if the robot is turned to an acceptable angle.
         // This could theoretically be calculated, but we with wind resistance and floppiness of the
@@ -158,13 +134,13 @@ public class AutoAim implements Sendable {
         } else {
             allowedYawErrorInDegrees = 0.1;
         }
-        double desiredYawInDegrees = getDesiredYawInDegrees();
+        double desiredYawInDegrees = getDesiredYawInDegreesToSpeaker(currentX, currentY, isBlueAlliance);
         double yawError = Math.abs(desiredYawInDegrees - yawInDegrees);
         if (yawError < allowedYawErrorInDegrees) {
             // Close enought
-            yawAligned = true;
+            m_yawAligned = true;
         } else {
-            yawAligned = false;
+            m_yawAligned = false;
         }
 
         // Determine if the arm is at an acceptable angle
@@ -178,15 +154,15 @@ public class AutoAim implements Sendable {
         } else {
             allowedArmErrorInDegrees = 0.1;
         }
-        double desiredArmAngleInDegrees = getDesiredShooterAngleInDegrees(isBlueAlliance);
+        double desiredArmAngleInDegrees = getDesiredShooterAngleInDegrees(currentX, currentY, isBlueAlliance);
         double pitchError = Math.abs(desiredArmAngleInDegrees - armAngleInDegrees);
         if (pitchError < allowedArmErrorInDegrees) {
-            pitchAligned = true;
+            m_pitchAligned = true;
         } else {
-            pitchAligned = false;
+            m_pitchAligned = false;
         }
 
-        if (yawAligned && pitchAligned) {
+        if (m_yawAligned && m_pitchAligned) {
             return true;
         } else {
             return false;
@@ -196,10 +172,15 @@ public class AutoAim implements Sendable {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("AutoAim");
-        builder.addDoubleProperty("desiredYaw", this::getDesiredYawInDegrees, null);
-       // builder.addDoubleProperty("desiredShootAngle", this::getDesiredShooterAngleInDegrees, null);
-
-        builder.addDoubleProperty("lastX", this::getLastX, null);
+        builder.addBooleanProperty("yawGood", this::dashboardYawIsAligned, null);
+        builder.addBooleanProperty("pitchGood", this::dashboardPitchIsAligned, null);
     }
 
+    private boolean dashboardYawIsAligned() {
+        return m_yawAligned;
+    }
+
+    private boolean dashboardPitchIsAligned() {
+        return m_pitchAligned;
+    }
 }

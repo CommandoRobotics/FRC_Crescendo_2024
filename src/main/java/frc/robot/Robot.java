@@ -10,6 +10,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -26,7 +27,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends TimedRobot
  {
-  private final XboxController m_controller = new XboxController(0);
+  private final Joystick m_joystick = new Joystick(0);
   private final Timer m_timer = new Timer();
 
   private final AutoAim m_aim = new AutoAim();
@@ -60,6 +61,7 @@ public class Robot extends TimedRobot
     
     // Push Field2d to SmartDashboard.
     SmartDashboard.putData("Field", m_field);
+    SmartDashboard.putData("AutoAim", m_aim);
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -111,7 +113,7 @@ public class Robot extends TimedRobot
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_simulatedYaw = Rotation2d.fromRadians(m_aim.getDesiredYawInDegrees());
+    m_simulatedYaw = Rotation2d.fromRadians(m_aim.getDesiredYawInDegreesToSpeaker(m_simulatedX, m_simulatedY, true));
 
     // Update the simluation with our new position.
     m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
@@ -126,15 +128,24 @@ public class Robot extends TimedRobot
   public void teleopPeriodic() {
     final double driveScalar = 0.05;
     // Swap X and Y on XBox Joystick
-    m_simulatedX -= m_controller.getLeftY() * driveScalar;
-    //
-    m_simulatedY -= m_controller.getLeftX()* driveScalar;
+    m_simulatedX -= m_joystick.getY() * driveScalar;
+    m_simulatedY -= m_joystick.getX() * driveScalar;
 
+    // For testing, use button 11 to switch Alliances.
+    boolean isBlueAlliance = m_joystick.getRawButton(11);
+  
     // Send our current information to the network.
     writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
     
     // Determine where the AutoAim thinks we should point.
-    m_simulatedYaw  = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegrees());
+    // Use button 3 (on top of joystick) to indicate arm up mode (Amp or Source).
+    if (m_joystick.getRawButton(3)) {
+      m_simulatedYaw = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegreesIfArmUp(m_simulatedX, m_simulatedY, isBlueAlliance));
+    } else {
+      m_simulatedYaw = Rotation2d.fromDegrees(m_aim.getDesiredYawInDegreesToSpeaker(m_simulatedX, m_simulatedY, isBlueAlliance));
+    }
+
+    m_aim.alignedEnoughToShoot(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees(), 60, isBlueAlliance);
 
     // Update the simluation with our new position.
     m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
