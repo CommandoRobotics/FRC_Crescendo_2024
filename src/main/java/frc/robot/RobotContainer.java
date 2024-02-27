@@ -19,10 +19,9 @@ import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 
 import frc.robot.commands.Feeding;
+import frc.robot.commands.Intaking;
 
 public class RobotContainer {
-
-
   // Subsystems
   Arm m_arm = new Arm();
   Dispenser m_dispenser = new Dispenser();
@@ -37,6 +36,9 @@ public class RobotContainer {
       new CommandJoystick(OperatorConstants.kDriverControllerPort);
       private final CommandXboxController armOperatorController =
       new CommandXboxController(OperatorConstants.kCopilotControllerPort);
+
+  private final JoystickButton armDownButton =
+    new JoystickButton(driverController.getHID(), 2);
 
   private final JoystickButton armUpButton =
     new JoystickButton(driverController.getHID(), 3);
@@ -74,7 +76,18 @@ public class RobotContainer {
     // Copilot B: Shoot (run motors while held)
     armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
 
-    // Chassis
+    // Driver 2 (thumb): Place arm in intaking mode.
+    armDownButton.whileTrue(
+      new Intaking(
+        m_arm,
+        m_dispenser,
+        swerveSubsystem,
+        () -> driverController.getY(),
+        () -> driverController.getX(),
+        () -> driverController.getZ()
+        )
+    );
+    
     // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
     armUpButton.whileTrue(
       new Feeding(
