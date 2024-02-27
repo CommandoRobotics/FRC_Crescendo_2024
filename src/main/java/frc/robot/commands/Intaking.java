@@ -37,10 +37,11 @@ public class Intaking extends Command {
     @Override
     public void execute() {
         // Set the arm down (flat, 0 degrees)
-        // TODO: Call the appropraite function from m_arm
+        m_arm.setFloorIntake();
+        m_arm.autoControl();
 
         // Set the dispenser to auto intake. This will run the intake motors unless there is a note in the indexer.
-        // TODO: Call the appropriate function from m_dispenser to auto intake.
+        m_dispenser.autoIntake();
         
         // Drive the swerve drive
         m_swerve.driveCommand(m_x, m_y, m_yaw_rate, true);
