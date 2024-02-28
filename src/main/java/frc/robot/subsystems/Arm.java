@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
@@ -39,7 +40,7 @@ import frc.robot.Constants.ArmConstants;
 
 // This class controls the internal electronics of the arm as well as providing
 // an interface for controlling it.
-public class Arm implements Sendable {
+public class Arm extends SubsystemBase {
     // Declare all the motors that will be used in this class.
     private CANSparkMax m_leftMotor; // Left side when you are looking toward the front of the robot.
     private CANSparkMax m_rightMotor; // Right side when you are looking toward the front of the robot.
@@ -243,9 +244,16 @@ public class Arm implements Sendable {
         return true;
     }
 
-    public void simulationPeriodic(double timeSinceLastCall) {
+    @Override
+    public void periodic() {
+        // This method will be called once per scheduler run
+    }
+
+    // This is called once per scheduler run, but only during simulation.
+    public void simulationPeriodic() {
         m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
-        m_simulatedArm.update(timeSinceLastCall);
+        // Default period is 20 milliseconds
+        m_simulatedArm.update(.02);
         m_simulatedEncoder.setDistance(m_simulatedArm.getAngleRads());
         RoboRioSim.setVInVoltage(
             BatterySim.calculateDefaultBatteryLoadedVoltage(

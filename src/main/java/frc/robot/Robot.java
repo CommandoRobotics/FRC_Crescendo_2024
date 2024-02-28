@@ -71,6 +71,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void simulationPeriodic() {
-    m_arm.simulationPeriodic(getPeriod());
+    m_arm.simulationPeriodic();
   }
 }
