@@ -46,6 +46,16 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return null; //TODO REPLACE THIS
+    double x = 0.5;
+    double y = 0.0;
+    double headingX = 0.0;
+    double headingY = 0.0;
+    //double rotateRate = 0.0;
+    return swerveSubsystem.driveCommand(
+      () -> x,
+      () -> y,
+      () -> headingX,
+      () -> headingY
+    );
   }
 }
