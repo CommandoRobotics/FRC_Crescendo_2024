@@ -96,6 +96,8 @@ public class DispenserSubsystem extends SubsystemBase {
 
     }
 
+    //TODO add eject button
+
     // This function runs the motors to pull in a Note (but not shoot it yet).
     public void intakeNote() {
         // Turn the intake wheels at 50% (0.5) speed.
@@ -105,7 +107,14 @@ public class DispenserSubsystem extends SubsystemBase {
         // TODO: Set the shooter motors to zero speed since we don't want to shoot it
         // yet.
     }
-
+    public void ejectNote() {
+        // Turn the intake wheels at 50% (0.5) speed.
+        m_intakeMotor.set(0.5);
+        uppershooterMotor.set(0);
+        lowershooterMotor.set(0);
+        // TODO: Set the shooter motors to zero speed since we don't want to shoot it
+        // yet.
+    }
     // This function turns on all the motors to shoot the Note.
     public void shootNoteImmediately() {
         // Since the Note is still in contact with the intake wheels, we need to use

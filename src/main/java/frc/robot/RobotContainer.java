@@ -56,12 +56,27 @@ public class RobotContainer {
 
    
 
-    //Y = shoot note IMMEDIATELY
-    armController.y()
-      .onTrue(new InstantCommand(dispenserSubsystem::shootNoteImmediately, dispenserSubsystem))
-      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+    
+//DRIVER STUFF
+    //TODO b = autoalign source
+
+    //TODO a = autoalign speaker
+
+    //TODO right trigger = intake
+
+    //TODO left trigger = outtake
+
+    //TODO x = autoalign amp
+
+
+
+    //start = reset navx
+    driverController.start()
+      .onTrue(new InstantCommand(swerveSubsystem::resetGyro, swerveSubsystem));
 
     
+
+    //ARM STUFF
     //a = spin up shooter 
     armController.a()
       .onTrue(new InstantCommand(dispenserSubsystem::spinUpShooterWheels, dispenserSubsystem))
@@ -69,8 +84,37 @@ public class RobotContainer {
 
     //b = intake note
     armController.b()
-      .onTrue(new InstantCommand(dispenserSubsystem::intakeNote, dispenserSubsystem))
+      .onTrue(new InstantCommand(dispenserSubsystem::ejectNote, dispenserSubsystem))
       .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+    //lefttrigger = spinup shooter
+    armController.leftTrigger()
+      .onTrue(new InstantCommand(dispenserSubsystem::spinUpShooterWheels, dispenserSubsystem))
+      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+    //righttrigger =  shoot
+    armController.rightTrigger()
+      .onTrue(new InstantCommand(dispenserSubsystem::shootNoteImmediately, dispenserSubsystem))
+      .onFalse(new InstantCommand(dispenserSubsystem::stop, dispenserSubsystem));
+
+//TODO: make arm up slightly = y
+
+    //TODO: make arm down slightly = a
+
+    //TODO: manual shooter = rightjoystick
+
+    //TODO: arm full up = updpad
+    
+
+    //TODO: arm full down = downdpad
+
+    //TODO: arm amp height = right dpad
+
+    //TODO: arm source height = left dpad
+
+
+
+    
 
 
 

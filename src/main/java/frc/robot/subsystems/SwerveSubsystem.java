@@ -19,11 +19,14 @@ import swervelib.SwerveDriveTest;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
+import com.kauailabs.navx.frc.AHRS;
 
 public class SwerveSubsystem extends SubsystemBase {
 
   //Drivetrain
   SwerveDrive swerveDrive;
+
+
 
   //Constants
   double maximumSpeed = Units.feetToMeters(4.5);
@@ -148,6 +151,14 @@ public class SwerveSubsystem extends SubsystemBase {
 
   //TODO More methods needed to help control the swerve drive.
   // This can be copied from the YAGSL examples or we can make our own ofc
+
+
+    AHRS navx = new AHRS();
+
+    public void resetGyro() {
+      navx.reset();
+    } //added resetGyro
+
 
   @Override
   public void periodic() {

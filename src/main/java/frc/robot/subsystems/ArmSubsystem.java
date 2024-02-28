@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
@@ -113,6 +114,18 @@ public class ArmSubsystem extends SubsystemBase {
         m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
     }
 
+
+    //TODO add max arm angle in constants
+    public void goToMaxUpPos(){
+        m_desiredAngle = Rotation2d.fromDegrees(Constants.MAXARMHEIGHT);
+    }
+
+    //TODO add min arm angle in constants
+    public void goToMaxDownPos(){
+        m_desiredAngle = Rotation2d.fromDegrees(Constants.MINARMHEIGHT);
+    }
+
+
     public Rotation2d getCurrentArmPosition() {
         // Read the value from the encoder.
         Rotation2d readingAngle = Rotation2d.fromRotations(m_hexBoreEncoder.get());
@@ -148,11 +161,11 @@ public class ArmSubsystem extends SubsystemBase {
         // If either limit switch is set (indicating it is pressed), check if the totalMotorOutput is
         // in that direction (i.e. positive for the front limit switch and negative for the back one) and change
         // the totalMotorOutput to zero. Don't change it to zero for the other direction.
-        if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
+     /*    if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
             totalMotorOutput = 0;
         } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
             totalMotorOutput = 0;
-        }
+        }*/
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
         
