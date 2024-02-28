@@ -22,6 +22,12 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
@@ -72,6 +78,8 @@ public class Arm extends SubsystemBase {
     private boolean m_testUp;
     private boolean m_detectedLeftEncoderBad;
     private boolean m_detectedRightEncoderBad;
+    private MechanismLigament2d m_supportLigament;
+    private MechanismLigament2d m_armLigament;
 
     // Constructor
     public Arm() {
@@ -103,6 +111,15 @@ public class Arm extends SubsystemBase {
         m_debuggingLastCommandedTotalMotorOutput = 0.0;
         m_detectedLeftEncoderBad = false;
         m_detectedRightEncoderBad = false;
+        Mechanism2d mech = new Mechanism2d(3, 3);
+        MechanismRoot2d root = mech.getRoot("shooter", 1, 0);
+        m_supportLigament = root.append(new MechanismLigament2d("support", .28, 90, 6, new Color8Bit(Color.kGray)));
+        m_armLigament =
+            m_supportLigament.append(
+                new MechanismLigament2d("arm", armLengthInMeters, 45, 6, new Color8Bit(Color.kBlue)
+            )
+        );
+        SmartDashboard.putData("Mech2d", mech);
     }
 
     // Sets the motors to brake mode and stop them.
@@ -260,6 +277,8 @@ public class Arm extends SubsystemBase {
                 m_simulatedArm.getCurrentDrawAmps()
             )
         );
+
+        m_armLigament.setAngle(getCurrentArmPosition().getDegrees());
     }
 
     @Override
