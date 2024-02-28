@@ -22,6 +22,13 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
@@ -39,7 +46,7 @@ import frc.robot.Constants.ArmConstants;
 
 // This class controls the internal electronics of the arm as well as providing
 // an interface for controlling it.
-public class Arm implements Sendable {
+public class Arm extends SubsystemBase {
     // Declare all the motors that will be used in this class.
     private CANSparkMax m_leftMotor; // Left side when you are looking toward the front of the robot.
     private CANSparkMax m_rightMotor; // Right side when you are looking toward the front of the robot.
@@ -71,6 +78,8 @@ public class Arm implements Sendable {
     private boolean m_testUp;
     private boolean m_detectedLeftEncoderBad;
     private boolean m_detectedRightEncoderBad;
+    private MechanismLigament2d m_supportLigament;
+    private MechanismLigament2d m_armLigament;
 
     // Constructor
     public Arm() {
@@ -102,6 +111,15 @@ public class Arm implements Sendable {
         m_debuggingLastCommandedTotalMotorOutput = 0.0;
         m_detectedLeftEncoderBad = false;
         m_detectedRightEncoderBad = false;
+        Mechanism2d mech = new Mechanism2d(3, 3);
+        MechanismRoot2d root = mech.getRoot("shooter", 1, 0);
+        m_supportLigament = root.append(new MechanismLigament2d("support", .28, 90, 6, new Color8Bit(Color.kGray)));
+        m_armLigament =
+            m_supportLigament.append(
+                new MechanismLigament2d("arm", armLengthInMeters, 45, 6, new Color8Bit(Color.kBlue)
+            )
+        );
+        SmartDashboard.putData("Mech2d", mech);
     }
 
     // Sets the motors to brake mode and stop them.
@@ -243,15 +261,24 @@ public class Arm implements Sendable {
         return true;
     }
 
-    public void simulationPeriodic(double timeSinceLastCall) {
+    @Override
+    public void periodic() {
+        // This method will be called once per scheduler run
+    }
+
+    // This is called once per scheduler run, but only during simulation.
+    public void simulationPeriodic() {
         m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
-        m_simulatedArm.update(timeSinceLastCall);
+        // Default period is 20 milliseconds
+        m_simulatedArm.update(.02);
         m_simulatedEncoder.setDistance(m_simulatedArm.getAngleRads());
         RoboRioSim.setVInVoltage(
             BatterySim.calculateDefaultBatteryLoadedVoltage(
                 m_simulatedArm.getCurrentDrawAmps()
             )
         );
+
+        m_armLigament.setAngle(getCurrentArmPosition().getDegrees());
     }
 
     @Override
