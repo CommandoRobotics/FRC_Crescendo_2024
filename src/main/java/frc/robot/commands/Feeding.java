@@ -5,11 +5,14 @@
 
 package frc.robot.commands;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
@@ -35,7 +38,7 @@ public class Feeding extends Command {
     double m_desiredYaw;
     
     // This is the constructor, it stores references to the subsystems we will use.
-    public Feeding(Arm the_arm, Dispenser the_dispenser, SwerveSubsystem the_swerve, AutoAim the_autoaim, Positioning the_positioning, DoubleSupplier the_x_translation, DoubleSupplier the_y_translation, BooleanSupplier the_shoot_indicator, boolean on_blueAlliance) {
+    public Feeding(Arm the_arm, Dispenser the_dispenser, SwerveSubsystem the_swerve, AutoAim the_autoaim, Positioning the_positioning, DoubleSupplier the_x_translation, DoubleSupplier the_y_translation, BooleanSupplier the_shoot_indicator) {
         m_arm = the_arm;
         m_dispenser = the_dispenser;
         m_swerve = the_swerve;
@@ -44,13 +47,19 @@ public class Feeding extends Command {
         m_x = the_x_translation;
         m_y = the_y_translation;
         m_shoot = the_shoot_indicator;
-        m_isBlueAlliance = on_blueAlliance;
+        m_isBlueAlliance = true;
         m_desiredYaw = 0.0;
     }
 
     // This will be called repeatedly while our system is running.
     @Override
     public void execute() {
+        Optional<Alliance> ally = DriverStation.getAlliance();
+        if (ally.isPresent()) {
+            if (ally.get() == Alliance.Red) {
+                m_isBlueAlliance = false;
+            }
+        }
         Pose2d currentPose = m_positioning.getPose();
         boolean ampIsCloser = m_autoaim.isAmpCloser(currentPose.getX(), currentPose.getY());
 
