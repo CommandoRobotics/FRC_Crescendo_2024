@@ -49,7 +49,10 @@ public class Positioning implements Sendable {
     private double biggestTag2;
 
     Positioning() {
-        lastPose = new Pose2d(0,0, Rotation2d.fromDegrees(0));
+        lastPose = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
+        poseArrayCamera1 = new double[6];
+        poseArrayCamera1 = new double[6];
+        lastCameraPose2d = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
     }
 
     // Returns whether positioning sees a valid target.
