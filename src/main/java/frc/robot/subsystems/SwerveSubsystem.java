@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import java.io.File;
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -148,6 +149,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   //TODO More methods needed to help control the swerve drive.
   // This can be copied from the YAGSL examples or we can make our own ofc
+
+  public Rotation2d getYaw() {
+    return swerveDrive.getYaw();
+  }
 
   @Override
   public void periodic() {
