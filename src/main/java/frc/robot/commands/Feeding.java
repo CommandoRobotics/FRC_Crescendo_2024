@@ -11,6 +11,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation;
 
@@ -98,11 +99,15 @@ public class Feeding extends Command {
         m_desiredYaw = m_autoaim.getDesiredYawInDegreesToAmp(m_isBlueAlliance);
     }
 
-    public void drive(double desired_yaw) {
+    public void drive(double desiredYaw) {
         // Drive slowly because we are near the intake/source.
         final double slow_factor = 0.5;
         double slow_x = slow_factor * m_x.getAsDouble();
         double slow_y = slow_factor * m_y.getAsDouble();
-        m_swerve.driveCommand(() -> slow_x, () -> slow_y, () -> desired_yaw, true);
+        // YAGSL uses the X component and Y component of an angle to set the desired angle.
+        Rotation2d desiredHeading = Rotation2d.fromDegrees(desiredYaw);
+        double headingX = desiredHeading.getSin();
+        double headingY = desiredHeading.getCos();
+        m_swerve.driveCommand(() -> slow_x, () -> slow_y, () -> headingX, () -> headingY);
     }
 }
