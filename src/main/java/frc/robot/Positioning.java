@@ -40,13 +40,17 @@ public class Positioning implements Sendable {
     // The following values will store the the determined values from this code.
     private boolean lastValid; // Whether we had a valid tag to determine location.
     private Pose2d lastPose; // Pose of the robot.
-    private Pose2d lastCameraPose2d; //
+    private Pose2d lastCameraPose2d; // For debugging
     private double lastCameraZ; // For debugging
     private double lastID; // April tag to determine this data.
 
     // The following stores which April Tag the limelight is using for calculations
     private double biggestTag1;
     private double biggestTag2;
+
+    Positioning() {
+        lastPose = new Pose2d(0,0, Rotation2d.fromDegrees(0));
+    }
 
     // Returns whether positioning sees a valid target.
     // Call this before using any of the other calls.
@@ -58,8 +62,7 @@ public class Positioning implements Sendable {
     // Returns the location and direction of the robot according to WPI Blue origin.
     // Units in Pose2d are Meters.
     public Pose2d getPose() {
-        // TDOD: Use actual last values of X, Y, and Yaw Rotation.
-        return new Pose2d(0, 0, Rotation2d.fromDegrees(0));
+        return lastPose;
     }
 
     //gets most previous x position
@@ -100,17 +103,18 @@ public class Positioning implements Sendable {
         if (trustLimelight1()) {
             // Limelight 1 saw valid data, use its values.
             lastValid = true;
-            Pose2d cameraPose = parsePose(poseArrayCamera1);
-            lastPose = translateToRobotPose(cameraPose, Constants.kLimelight1Pose);
+            lastCameraPose2d = parsePose(poseArrayCamera1);
+            lastPose = translateToRobotPose(lastCameraPose2d, Constants.kLimelight1Pose);
             lastID = biggestTag1;
+            lastCameraZ = poseArrayCamera1[zIndex];
         } else if (trustLimelight2()) {
             // Limelight 2 saw valid data (but Limelight 1 did not). Use this data.
            // Added variables for second camera's data.
             lastValid = true;
-            Pose2d cameraPose = parsePose(poseArrayCamera2);
-            lastPose = translateToRobotPose(cameraPose, Constants.kLimelight2Pose);
+            lastCameraPose2d = parsePose(poseArrayCamera2);
+            lastPose = translateToRobotPose(lastCameraPose2d, Constants.kLimelight2Pose);
             lastID = biggestTag2;
-
+            lastCameraZ = poseArrayCamera2[zIndex];
         } else {
             // Neither camera has valid data.
             // Retain the last known data, but mark the data as invalid.
@@ -151,9 +155,7 @@ public class Positioning implements Sendable {
     }
 
     private boolean trustLimelight2() {
-        // TODO: Implement this. See trustLimelight1 as example and change appropriately.
         return limelightHasValidPose(targetValid2, biggestTag2, poseArrayCamera2[zIndex]);
-        //return false;
     }
 
 
@@ -180,6 +182,7 @@ public class Positioning implements Sendable {
         builder.setSmartDashboardType("AutoAim");
         builder.addDoubleProperty("lastX", this::getX, null);
         builder.addDoubleProperty("lastY", this::getY, null);
+        builder.addDoubleProperty("lastZ", this::dashboardGetZ, null);
         builder.addDoubleProperty("lastYaw", this::getYaw, null);
         builder.addDoubleProperty("lastID", this::dashboardGetAprilTagID, null);
         builder.addBooleanProperty("trust1", this::trustLimelight1, null);
@@ -195,6 +198,10 @@ public class Positioning implements Sendable {
     // Return the current April Tag ID we are using.
     private double dashboardGetAprilTagID() {
         return lastID;
+    }
+
+    private double dashboardGetZ() {
+        return lastCameraZ;
     }
 
     // Return the position that Limelight1 thinks we are at.
@@ -218,5 +225,22 @@ public class Positioning implements Sendable {
         return translateToRobotPose(parsePose(poseArrayCamera2), Constants.kLimelight2Pose).getRotation().getDegrees();
     }
 
+    // Call this to force simulated values for X, Y, and Yaw.
+    public void simulationPeriodic(double x, double y, double yaw) {
+        NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight");
+        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limeligh-backup");
+
+        final double simulateAcquired = 1;
+        limelightTable1.getEntry("tv").setDouble(simulateAcquired);
+        limelightTable2.getEntry("tv").setDouble(simulateAcquired);
+
+        final double simulateAprilTagID = 1;
+        limelightTable1.getEntry("tid").setDouble(simulateAprilTagID);
+        limelightTable2.getEntry("tid").setDouble(simulateAprilTagID);
+
+        final double poseValues[] = {x, y, 0.5, 0, 0, yaw};
+        limelightTable1.getEntry("botpose_wpiblue").setDoubleArray(poseValues);
+        limelightTable2.getEntry("botpose_wpiblue").setDoubleArray(poseValues);
+    }
 
 }

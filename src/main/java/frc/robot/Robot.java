@@ -34,7 +34,7 @@ public class Robot extends TimedRobot
   // Used for simulation
   private double m_simulatedX; // Simulated X position (meters forward) on the field.
   private double m_simulatedY; // Simulated Y position (meters left of far right) on the field.
-  private Rotation2d m_simulatedYaw; // Simulated Rotation of the robot
+  private double m_simulatedYaw; // Simulated Rotation of the robot
   private boolean m_driveForward; // Retains the forward/backwards direction of the robot during simulation.
   private boolean m_driveLeft; // Retains the forward/backwards direction of the robot during simulation.
   // Used by simulation to determine robot position and direction.
@@ -47,7 +47,7 @@ public class Robot extends TimedRobot
     m_simulatedY = 5.0;
     m_driveForward = true;
     m_driveLeft = true;
-    m_simulatedYaw = new Rotation2d(0);
+    m_simulatedYaw = 0;
   }
 
   /**
@@ -107,15 +107,14 @@ public class Robot extends TimedRobot
       m_simulatedY -= distanceTraveled;
     }
 
-    // Send our current information to the network.
-    writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
+    final double rotationRate = 0.01;
+    m_simulatedYaw -= rotationRate;
     
     // Determine where the AutoAim thinks we should point.
     m_positioning.update();
-    m_simulatedYaw = m_positioning.getPose().getRotation();
 
     // Update the simluation with our new position.
-    m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
+    m_field.setRobotPose(m_positioning.getX(), m_positioning.getY(), Rotation2d.fromDegrees(m_positioning.getYaw()));
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
@@ -131,15 +130,20 @@ public class Robot extends TimedRobot
     //
     m_simulatedY -= m_controller.getLeftX()* driveScalar;
 
-    // Send our current information to the network.
-    writeFakeLimelightData(m_simulatedX, m_simulatedY, m_simulatedYaw.getDegrees());
+    if (m_controller.getAButton()) {
+      m_simulatedYaw += 0.05;
+    }
     
     // Determine where the AutoAim thinks we should point.
     m_positioning.update();
-    m_simulatedYaw  = m_positioning.getPose().getRotation();
 
     // Update the simluation with our new position.
-    m_field.setRobotPose(m_simulatedX, m_simulatedY, m_simulatedYaw);
+    m_field.setRobotPose(m_positioning.getX(), m_positioning.getY(), Rotation2d.fromDegrees(m_positioning.getYaw()));
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    m_positioning.simulationPeriodic(m_simulatedX, m_simulatedY, m_simulatedYaw);
   }
 
   /** This function is called once each time the robot enters test mode. */
@@ -149,10 +153,5 @@ public class Robot extends TimedRobot
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
-
-  private void writeFakeLimelightData(double x, double y, double rotationInDegrees) {
-    double[] pose = { m_simulatedX, m_simulatedY, 0, 0, 0, m_simulatedYaw.getDegrees() };
-    limelightBotPose.setDoubleArray(pose);
-  }
 
 }
