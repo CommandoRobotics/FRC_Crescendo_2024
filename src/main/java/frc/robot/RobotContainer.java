@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -93,6 +94,11 @@ public class RobotContainer {
         () -> driverController.trigger().getAsBoolean()
       )
     );
+  }
+
+  public void simulationPeriodic(double period) {
+    Pose2d pose = swerveSubsystem.getPose();
+    m_positioning.simulationPeriodic(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
   }
 
   /**
