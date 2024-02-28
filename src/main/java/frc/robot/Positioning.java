@@ -51,7 +51,7 @@ public class Positioning implements Sendable {
     Positioning() {
         lastPose = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
         poseArrayCamera1 = new double[6];
-        poseArrayCamera1 = new double[6];
+        poseArrayCamera2 = new double[6];
         lastCameraPose2d = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
     }
 
