@@ -9,6 +9,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -26,6 +27,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   //Drivetrain
   SwerveDrive swerveDrive;
+
+
+
 
   //Constants
   double maximumSpeed = Units.feetToMeters(4.5);
@@ -153,6 +157,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Pose2d getPose() {
     return swerveDrive.getPose();
+  }
+
+
+  public void resetGyro() {
+    swerveDrive.setGyro(new Rotation3d(0, 0, 0));
+    
   }
 
   @Override

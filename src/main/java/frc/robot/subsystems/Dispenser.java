@@ -196,8 +196,8 @@ public class Dispenser extends SubsystemBase {
     public void spinUpShooterWheels() {
         
         m_intakeMotor.set(0);
-        uppershooterMotor.set(1.0);
-        lowershooterMotor.set(1.0);
+        uppershooterMotor.set(0.07);
+        lowershooterMotor.set(0.07);
         
     }
 

@@ -6,9 +6,11 @@ package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -35,8 +37,8 @@ public class RobotContainer {
   Positioning m_positioning = new Positioning();
 
   // Controllers
-  private final CommandJoystick driverController =
-      new CommandJoystick(OperatorConstants.kDriverControllerPort);
+  private final CommandXboxController driverController =
+      new CommandXboxController(OperatorConstants.kDriverControllerPort);
       private final CommandXboxController armOperatorController =
       new CommandXboxController(OperatorConstants.kCopilotControllerPort);
 
@@ -48,11 +50,17 @@ public class RobotContainer {
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
 
+          MathUtil.applyDeadband(driverController.getLeftY(), 0.1);
+          MathUtil.applyDeadband(driverController.getLeftX(), 0.1);
+          MathUtil.applyDeadband(driverController.getRightX(), 0.1);
+
+
+
     //Default commands
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(() -> -driverController.getY(),
-                                   () -> -driverController.getX(), 
-                                   () -> -driverController.getZ()));
+      swerveSubsystem.driveCommand(() -> -driverController.getLeftY(),
+                                   () -> -driverController.getLeftX(), 
+                                   () -> -driverController.getRightX()));
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
     m_dispenser.setDefaultCommand(m_dispenser.spinCommand());
     // Configure the trigger bindings
@@ -79,21 +87,22 @@ public class RobotContainer {
     armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.ejectNote()));
     // Copilot B: Shoot (run motors while held)
     armOperatorController.b().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
+    driverController.start().onTrue(Commands.run(() -> swerveSubsystem.resetGyro()));
 
     // Chassis
     // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
-    armUpButton.whileTrue(
+   /* armUpButton.whileTrue(
       new Feeding(
         m_arm,
         m_dispenser,
         swerveSubsystem,
         m_autoaim,
         m_positioning,
-        () -> driverController.getY(),
-        () -> driverController.getX(),
+        () -> driverController.getLeftY(),
+        () -> driverController.getLeftX(),
         () -> driverController.trigger().getAsBoolean()
-      )
-    );
+      ) 
+    );*/
   }
 
   public void simulationPeriodic(double period) {
