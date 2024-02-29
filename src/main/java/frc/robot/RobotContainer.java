@@ -55,6 +55,9 @@ public class RobotContainer {
                                    () -> -driverController.getZ()));
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
     m_dispenser.setDefaultCommand(m_dispenser.spinCommand());
+
+    m_arm.setDefaultCommand(m_arm.stopCommand());
+
     // Configure the trigger bindings
     configureBindings();
     SmartDashboard.putData("Arm", m_arm);

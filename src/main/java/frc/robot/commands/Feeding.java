@@ -70,6 +70,8 @@ public class Feeding extends Command {
         } else {
             sourcing();
         }
+        m_arm.autoControl();
+        
         // Drive the swerve, slowly.
         drive(m_desiredYaw);
     }
@@ -86,7 +88,7 @@ public class Feeding extends Command {
 
     public void amping() {
         // Set arm to angle for scoring in the Amp.
-        m_arm.setAmpArngle();
+        m_arm.setAmpAngle();
         // If the driver said we can shoot, do so. Otherwise just spin up the output motors.
         if (m_shoot.getAsBoolean() == true) {
             // Trigger pulled. Shoot immediately.
