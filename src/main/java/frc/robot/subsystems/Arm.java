@@ -7,6 +7,8 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot.subsystems;
 
+import java.util.function.DoubleSupplier;
+
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -32,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -41,6 +44,7 @@ import com.revrobotics.SparkMaxAlternateEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkLimitSwitch;
 
+import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
 
 
@@ -69,8 +73,8 @@ public class Arm extends SubsystemBase {
     private final double armLengthInMeters = 0.77; // Updated with correct length.
     private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
     private final double armReduction = 5 * 4 * 2 * 3; // Max planetary 5:1, 4:1, 2:1 and a 3:1 chain reduction.
-    private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
-    private final Rotation2d maxPosition = Rotation2d.fromDegrees(90);
+    private final Rotation2d minPosition = Rotation2d.fromDegrees(ArmConstants.kMinimumAllowedAngle);
+    private final Rotation2d maxPosition = Rotation2d.fromDegrees(ArmConstants.kMaximumAllowedAngle);
     private DutyCycleEncoderSim m_simulatedEncoder;
     private double m_debuggingLastPIDOutput;
     private double m_debbugingLastFeedForwardOutput;
@@ -88,11 +92,11 @@ public class Arm extends SubsystemBase {
         m_rightMotor = new CANSparkMax(32, MotorType.kBrushless);
         m_rightMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setInverted(true);
-        m_leftHexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
-        m_rightHexBoreEncoder = new DutyCycleEncoder(1); // Connected to this RoboRio DIO port.
+        m_leftHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortLeftEncoder); // Connected to this RoboRio DIO port.
+        m_rightHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortRightEncoder); // Connected to this RoboRio DIO port.
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
-        m_upLimitSwitch = new DigitalInput(2);
-        m_downLimitSwitch = new DigitalInput(3);
+        m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
+        m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
         
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
@@ -122,6 +126,84 @@ public class Arm extends SubsystemBase {
         SmartDashboard.putData("Mech2d", mech);
     }
 
+    // Command that tells the motors to not resist external arm movement.
+    Command releaseCommand() {
+        return this.runOnce(() -> release());
+    }
+
+    // Command that puts motors in brake mode (not necesarily hold position).
+    Command stopCommand() {
+        return this.runOnce(() -> stop());
+    }
+
+    // Adjusts angle toward Amp height. Call repeatedly to hold this angle.
+    Command adjustTowardAmpCommand() {
+        return this.runOnce(
+            () -> {
+                setAmpAngle();
+                autoControl();
+            }
+        );
+    }
+
+    // Adjusts angle toward Source height. Call repeatedly to hold this angle.
+    Command adjustTowardSourceCommand() {
+        return this.runOnce(
+            () -> {
+                setSourceIntake();
+                autoControl();
+            }
+        );       
+    }
+
+    // Adjusts angle toward Source height. Call repeatedly to hold this angle.
+    Command adjustTowardFloorCommand() {
+        return this.runOnce(
+            () -> {
+                setFloorIntake();
+                autoControl();
+            }
+        );       
+    }
+
+    // Use manual control. Power is -1.0 to +1.0
+    Command manualControlCommand(DoubleSupplier power) {
+        return this.runOnce( () -> manuallyPowerArm(power.getAsDouble()) );
+    }
+
+    // Moves the arm toward the desired angle.
+    // Angle needs to be within allowable range of motion of the arm. (0-90)
+    // You can use this to have the arm match a joystick (if you convert the value to acceptable degrees).
+    Command setpointCommand(DoubleSupplier angleInDegrees) {
+        return this.runOnce(
+            () -> {
+                setAngleInDegrees(angleInDegrees.getAsDouble());
+                autoControl();
+            }
+        );
+    }
+
+    // Uses the provided value (-1.0 flat to 1.0 full up) as the setpoint and adjusts towards it.
+    // Use this if you want to track an joystick (XBox or flightstick). 
+    Command trackCommand(DoubleSupplier value) {
+        return this.runOnce(
+            () -> {
+                setAngleInDegrees(toAngleFromRange(-1.0, 1.0, value.getAsDouble()));
+                autoControl();
+            }
+        );
+    }
+
+    // Sets motors to cost mode and no power.
+    // Use this if we need physically move (or clamp) the arm without the motors interfering.
+    public void release() {
+        m_leftMotor.setIdleMode(IdleMode.kCoast);
+        m_rightMotor.setIdleMode(IdleMode.kCoast);
+
+        m_leftMotor.stopMotor();
+        m_rightMotor.stopMotor();
+    }
+
     // Sets the motors to brake mode and stop them.
     public void stop() {
         m_leftMotor.setIdleMode(IdleMode.kBrake);
@@ -136,6 +218,12 @@ public class Arm extends SubsystemBase {
     // Percentage should be from -1.0 to +1.0.
     // DO NOT use autoControl and manual control at the same time.
     public void manuallyPowerArm(double motorPercent) {
+        // Protect from values outside of what is allowed.
+        if (motorPercent > 1.0) {
+            motorPercent = 1.0;
+        } else if (motorPercent < -1.0) {
+            motorPercent = -1.0;
+        }
         m_leftMotor.set(motorPercent);
         m_rightMotor.set(motorPercent);
     }
@@ -143,6 +231,12 @@ public class Arm extends SubsystemBase {
     // Sets the target position of the Arm.
     // Arm in the intaking position (horizontal) is considered 0 degrees.
     public void setAngleInDegrees(double angleInDegrees) {
+        // Protect against angles that are not allowed
+        if (angleInDegrees < ArmConstants.kMinimumAllowedAngle) {
+            angleInDegrees = ArmConstants.kMinimumAllowedAngle;
+        } else if (angleInDegrees > ArmConstants.kMaximumAllowedAngle) {
+            angleInDegrees = ArmConstants.kMaximumAllowedAngle;
+        }
         m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
     }
 
@@ -155,7 +249,7 @@ public class Arm extends SubsystemBase {
         setAngleInDegrees(ArmConstants.kSourceAngle);
     }
 
-    public void setAmpArngle() {
+    public void setAmpAngle() {
         setAngleInDegrees(ArmConstants.kAmpAngle);
     }
 
@@ -259,6 +353,15 @@ public class Arm extends SubsystemBase {
         m_rightMotor.set(totalMotorOutput);
         
         return true;
+    }
+
+    // Returns an angle that corresponds to the percentage within the range.
+    // For example if the range is 0 to 1, and the value is 0.5, the degrees will be 45 (halfway beteen 0 and 90).
+    double toAngleFromRange(double rangeMin, double rangeMax, double value) {
+        double percentage = (value - rangeMin) / (rangeMax - rangeMin);
+        double armRange = ArmConstants.kMaximumAllowedAngle - ArmConstants.kMinimumAllowedAngle;
+        double degrees = percentage * armRange + ArmConstants.kMinimumAllowedAngle;
+        return degrees;
     }
 
     @Override
