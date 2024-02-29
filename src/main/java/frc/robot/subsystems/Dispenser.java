@@ -88,6 +88,14 @@ public class Dispenser extends SubsystemBase {
         return run( () -> spinUpShooterWheels());
     }
 
+    public Command autoIntakeCommand() {
+        return run(() -> autoIntake());
+    }
+
+    public Command shootCommand() {
+        return run(() -> shootNoteImmediately());
+    }
+
     // Return true if the Intake beam brake sensor sees a note.
     boolean intakeDetectsNote() {
         // The intake sensor is high (true) when it sees the beam (light).
