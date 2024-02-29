@@ -52,9 +52,9 @@ public class RobotContainer {
     swerveSubsystem.setDefaultCommand(
       swerveSubsystem.driveCommand(() -> -driverController.getY(),
                                    () -> -driverController.getX(), 
-                                   () -> driverController.getZ()));
+                                   () -> -driverController.getZ()));
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
-  
+    m_dispenser.setDefaultCommand(m_dispenser.spinCommand());
     // Configure the trigger bindings
     configureBindings();
     SmartDashboard.putData("Arm", m_arm);
@@ -74,11 +74,11 @@ public class RobotContainer {
     // Copilot Left Bumper: Auto Intake
     armOperatorController.leftBumper().whileTrue(Commands.run(() -> m_dispenser.autoIntake()));
     // Copilot Right Bumper: Auto Shoot (until empty)
-    armOperatorController.leftBumper().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
+    armOperatorController.rightBumper().whileTrue(Commands.run(() -> m_dispenser.feedShooter()));
     // Copilot X: Eject notes (back through intake)
     armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.ejectNote()));
     // Copilot B: Shoot (run motors while held)
-    armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
+    armOperatorController.b().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
 
     // Chassis
     // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).

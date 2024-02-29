@@ -93,6 +93,7 @@ public class Arm extends SubsystemBase {
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         m_upLimitSwitch = new DigitalInput(2);
         m_downLimitSwitch = new DigitalInput(3);
+        //TODO include left offset -60.7
         
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
