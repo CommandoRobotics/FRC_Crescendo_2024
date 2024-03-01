@@ -156,9 +156,12 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
+  public Command resetGyroCommand() {
+    return run(() -> resetGyro());
+  }
+
   public void resetGyro() {
     swerveDrive.setGyro(new Rotation3d(0, 0, 0));
-    
   }
 
   @Override

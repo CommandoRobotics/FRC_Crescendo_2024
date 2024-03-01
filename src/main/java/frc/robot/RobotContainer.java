@@ -92,7 +92,7 @@ public class RobotContainer {
 
     // Chassis Control
     // Driver Start: Reset Gyro
-    driverController.start().onTrue(Commands.run(() -> swerveSubsystem.resetGyro()));
+    driverController.start().onTrue(swerveSubsystem.resetGyroCommand());
 
     // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
    /* armUpButton.whileTrue(
