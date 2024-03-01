@@ -16,15 +16,36 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public final class Constants {
 
+  public static class AutomationConstants {
+    public static final double kAmpSpeedFactor = 0.5; // TODO: Tune this to allow easy aligning without going too slow.
+    public static final double kSourceSpeedFactor = 0.25; // TODO: Tune this to allow easy alginging without going too slow.
+  }
+
   // Arm Constants - all angles in degrees, with zero meaning flat/down and 90 degrees arm straight up.
   public static class ArmConstants {
+    public static final double kMinimumAllowedAngle = 0.0;
+    public static final double kMaximumAllowedAngle = 90.0;
     public static final double kFloorIntakeAngle = 0; // TODO: Tune this angle. The angle when intaking notes from ground.
     public static final double kAmpAngle = 89; // TODO: Tune this angle. The angle when placing in the amp.
     public static final double kSourceAngle = 65; // TODO: Tune this angle. The angle when intaking from the source.
     public static final boolean kLeftArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
     public static final boolean kRightArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
-    public static final double kLeftArmEncoderOffsetInRotations = 0; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
-    public static final double kRightArmEncoderOffsetInRotations = 0; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final double kLeftArmEncoderOffsetInRotations = 0.1686; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final double kRightArmEncoderOffsetInRotations = 0.8313; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final int kRioDIOPortLeftEncoder = 0;
+    public static final int kRioDIOPortRightEncoder = 1;
+    public static final int kRioDIOPortUpLimitSwitch = 2;
+    public static final int kRioDIOPortDownLimitSwitch = 3;
+  }
+
+  public static class DispenserConstants {
+    public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
+    public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kShooterIdleSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final int kRioDIOPortIntakeBeamBreak = 6;
+    public static final int kRioDIOPortIndexerBeamBreak = 7;
+    public static final int kRioDIOPortShooterBeamBreak = 9;
   }
 
   // All the following are in meters using WPI Lib Blue as the Origin
@@ -56,6 +77,7 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kCopilotControllerPort = 1;
+    public static final double kTriggerOverrideThreshold = 0.15; // TODO: Tune this. Make sure we won't accidently hit it.
   }
 
   // Limelight Positions

@@ -7,6 +7,8 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot.subsystems;
 
+import java.util.function.DoubleSupplier;
+
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,9 +24,17 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -34,12 +44,13 @@ import com.revrobotics.SparkMaxAlternateEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkLimitSwitch;
 
+import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
 
 
 // This class controls the internal electronics of the arm as well as providing
 // an interface for controlling it.
-public class Arm implements Sendable {
+public class Arm extends SubsystemBase {
     // Declare all the motors that will be used in this class.
     private CANSparkMax m_leftMotor; // Left side when you are looking toward the front of the robot.
     private CANSparkMax m_rightMotor; // Right side when you are looking toward the front of the robot.
@@ -62,8 +73,8 @@ public class Arm implements Sendable {
     private final double armLengthInMeters = 0.77; // Updated with correct length.
     private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
     private final double armReduction = 5 * 4 * 2 * 3; // Max planetary 5:1, 4:1, 2:1 and a 3:1 chain reduction.
-    private final Rotation2d minPosition = Rotation2d.fromDegrees(0);
-    private final Rotation2d maxPosition = Rotation2d.fromDegrees(90);
+    private final Rotation2d minPosition = Rotation2d.fromDegrees(ArmConstants.kMinimumAllowedAngle);
+    private final Rotation2d maxPosition = Rotation2d.fromDegrees(ArmConstants.kMaximumAllowedAngle);
     private DutyCycleEncoderSim m_simulatedEncoder;
     private double m_debuggingLastPIDOutput;
     private double m_debbugingLastFeedForwardOutput;
@@ -71,6 +82,8 @@ public class Arm implements Sendable {
     private boolean m_testUp;
     private boolean m_detectedLeftEncoderBad;
     private boolean m_detectedRightEncoderBad;
+    private MechanismLigament2d m_supportLigament;
+    private MechanismLigament2d m_armLigament;
 
     // Constructor
     public Arm() {
@@ -79,11 +92,13 @@ public class Arm implements Sendable {
         m_rightMotor = new CANSparkMax(32, MotorType.kBrushless);
         m_rightMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setInverted(true);
-        m_leftHexBoreEncoder = new DutyCycleEncoder(0); // Connected to this RoboRio DIO port.
-        m_rightHexBoreEncoder = new DutyCycleEncoder(1); // Connected to this RoboRio DIO port.
+        m_leftHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortLeftEncoder); // Connected to this RoboRio DIO port.
+        m_rightHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortRightEncoder); // Connected to this RoboRio DIO port.
+        m_leftHexBoreEncoder.setPositionOffset(ArmConstants.kLeftArmEncoderOffsetInRotations);
+        m_rightHexBoreEncoder.setPositionOffset(ArmConstants.kRightArmEncoderOffsetInRotations);
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
-        m_upLimitSwitch = new DigitalInput(2);
-        m_downLimitSwitch = new DigitalInput(3);
+        m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
+        m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
         
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
@@ -102,6 +117,94 @@ public class Arm implements Sendable {
         m_debuggingLastCommandedTotalMotorOutput = 0.0;
         m_detectedLeftEncoderBad = false;
         m_detectedRightEncoderBad = false;
+        Mechanism2d mech = new Mechanism2d(3, 3);
+        MechanismRoot2d root = mech.getRoot("shooter", 1, 0);
+        m_supportLigament = root.append(new MechanismLigament2d("support", .28, 90, 6, new Color8Bit(Color.kGray)));
+        m_armLigament =
+            m_supportLigament.append(
+                new MechanismLigament2d("arm", armLengthInMeters, 45, 6, new Color8Bit(Color.kBlue)
+            )
+        );
+        SmartDashboard.putData("Mech2d", mech);
+    }
+
+    // Command that tells the motors to not resist external arm movement.
+    public Command releaseCommand() {
+        return run(() -> release());
+    }
+
+    // Command that puts motors in brake mode (not necesarily hold position).
+    public Command stopCommand() {
+        return run(() -> stop());
+    }
+
+    // Adjusts angle toward Amp height. Call repeatedly to hold this angle.
+    public Command adjustTowardAmpCommand() {
+        return run(
+            () -> {
+                setAmpAngle();
+                autoControl();
+            }
+        );
+    }
+
+    // Adjusts angle toward Source height. Call repeatedly to hold this angle.
+   public Command adjustTowardSourceCommand() {
+        return run(
+            () -> {
+                setSourceIntake();
+                autoControl();
+            }
+        );       
+    }
+
+    // Adjusts angle toward Source height. Call repeatedly to hold this angle.
+    public Command adjustTowardFloorCommand() {
+        return run(
+            () -> {
+                setFloorIntake();
+                autoControl();
+            }
+        );       
+    }
+
+    // Use manual control. Power is -1.0 to +1.0
+    public Command manualControlCommand(DoubleSupplier power) {
+        return run( () -> manuallyPowerArm(power.getAsDouble()) );
+    }
+
+    // Moves the arm toward the desired angle.
+    // Angle needs to be within allowable range of motion of the arm. (0-90)
+    // You can use this to have the arm match a joystick (if you convert the value to acceptable degrees).
+    public Command setpointCommand(DoubleSupplier angleInDegrees) {
+        return run(
+            () -> {
+                setAngleInDegrees(angleInDegrees.getAsDouble());
+                autoControl();
+            }
+        );
+    }
+
+    // Uses the provided value (-1.0 flat to 1.0 full up) as the setpoint and adjusts towards it.
+    // Use this if you want to track an joystick (XBox or flightstick). 
+    public Command trackCommand(DoubleSupplier value) {
+        return run(
+            () -> {
+                setAngleInDegrees(toAngleFromRange(-1.0, 1.0, value.getAsDouble()));
+                autoControl();
+            }
+        );
+    }
+
+    // Sets motors to cost mode and no power.
+    // Use this if we need physically move (or clamp) the arm without the motors interfering.
+    public void release() {
+        m_leftMotor.setIdleMode(IdleMode.kCoast);
+        m_rightMotor.setIdleMode(IdleMode.kCoast);
+
+        m_debuggingLastCommandedTotalMotorOutput = 0;
+        m_leftMotor.stopMotor();
+        m_rightMotor.stopMotor();
     }
 
     // Sets the motors to brake mode and stop them.
@@ -109,6 +212,7 @@ public class Arm implements Sendable {
         m_leftMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setIdleMode(IdleMode.kBrake);
 
+        m_debuggingLastCommandedTotalMotorOutput = 0;
         m_leftMotor.stopMotor();
         m_rightMotor.stopMotor();
     }
@@ -118,6 +222,13 @@ public class Arm implements Sendable {
     // Percentage should be from -1.0 to +1.0.
     // DO NOT use autoControl and manual control at the same time.
     public void manuallyPowerArm(double motorPercent) {
+        // Protect from values outside of what is allowed.
+        if (motorPercent > 1.0) {
+            motorPercent = 1.0;
+        } else if (motorPercent < -1.0) {
+            motorPercent = -1.0;
+        }
+        m_debuggingLastCommandedTotalMotorOutput = motorPercent;
         m_leftMotor.set(motorPercent);
         m_rightMotor.set(motorPercent);
     }
@@ -125,6 +236,12 @@ public class Arm implements Sendable {
     // Sets the target position of the Arm.
     // Arm in the intaking position (horizontal) is considered 0 degrees.
     public void setAngleInDegrees(double angleInDegrees) {
+        // Protect against angles that are not allowed
+        if (angleInDegrees < ArmConstants.kMinimumAllowedAngle) {
+            angleInDegrees = ArmConstants.kMinimumAllowedAngle;
+        } else if (angleInDegrees > ArmConstants.kMaximumAllowedAngle) {
+            angleInDegrees = ArmConstants.kMaximumAllowedAngle;
+        }
         m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
     }
 
@@ -137,20 +254,22 @@ public class Arm implements Sendable {
         setAngleInDegrees(ArmConstants.kSourceAngle);
     }
 
-    public void setAmpArngle() {
+    public void setAmpAngle() {
         setAngleInDegrees(ArmConstants.kAmpAngle);
     }
 
     // Returns the angle the left Arm is at.
     public Rotation2d getLeftPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_leftHexBoreEncoder.get());
-        return getAdjustedPosition(measuredAngle, m_leftEncoderOffset, ArmConstants.kLeftArmReversed);
+        // Encoder offset was set in the constructor.
+        return getAdjustedPosition(measuredAngle, Rotation2d.fromDegrees(0), ArmConstants.kLeftArmReversed);
     }
 
     // Returns the angle the right Arm is at.
     public Rotation2d getRightPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_rightHexBoreEncoder.get());
-        return getAdjustedPosition(measuredAngle, m_rightEncoderOffset, ArmConstants.kRightArmReversed);
+        // Encoder offset was set in the constructor.
+        return getAdjustedPosition(measuredAngle, Rotation2d.fromDegrees(0), ArmConstants.kRightArmReversed);
     }
 
     // Determines actual angle, adjusting for the encoder's offest and whether it is reversed.
@@ -172,6 +291,7 @@ public class Arm implements Sendable {
     // Returns false if the left encoder is returning a value outside the arm's range of motion (0-110 degrees).
     public boolean leftEncoderReasonable() {
         if (armEncoderReasonable(getLeftPosition())) {
+            m_detectedLeftEncoderBad = false;
             return true;
         } else {
             m_detectedLeftEncoderBad = true;
@@ -182,6 +302,7 @@ public class Arm implements Sendable {
     // Returns false if the right encoder is returning a value outside the arm's range of motion (0-110 degrees).
     public boolean rightEncoderReasonable() {
         if (armEncoderReasonable(getRightPosition())) {
+            m_detectedRightEncoderBad = false;
             return true;
         } else {
             m_detectedRightEncoderBad = true;
@@ -231,27 +352,47 @@ public class Arm implements Sendable {
         double totalMotorOutput = feedForwardOutput + pidOutput;
         // Make sure we do not set the motors beyond what they can actually do.
         totalMotorOutput = MathUtil.clamp(totalMotorOutput, -1.0, 1.0);
-        m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
         if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
             totalMotorOutput = 0;
         } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
             totalMotorOutput = 0;
         }
+        m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
         m_leftMotor.set(totalMotorOutput);
         m_rightMotor.set(totalMotorOutput);
         
         return true;
     }
 
-    public void simulationPeriodic(double timeSinceLastCall) {
-        m_simulatedArm.setInput(m_leftMotor.get() * RobotController.getBatteryVoltage());
-        m_simulatedArm.update(timeSinceLastCall);
-        m_simulatedEncoder.setDistance(m_simulatedArm.getAngleRads());
+    // Returns an angle that corresponds to the percentage within the range.
+    // For example if the range is 0 to 1, and the value is 0.5, the degrees will be 45 (halfway beteen 0 and 90).
+    double toAngleFromRange(double rangeMin, double rangeMax, double value) {
+        double percentage = (value - rangeMin) / (rangeMax - rangeMin);
+        double armRange = ArmConstants.kMaximumAllowedAngle - ArmConstants.kMinimumAllowedAngle;
+        double degrees = percentage * armRange + ArmConstants.kMinimumAllowedAngle;
+        return degrees;
+    }
+
+    @Override
+    public void periodic() {
+        // The arm is perpendicular to the Upright shoulder.
+        m_armLigament.setAngle(getCurrentArmPosition().getDegrees() - 90);
+    }
+
+    // This is called once per scheduler run, but only during simulation.
+    @Override
+    public void simulationPeriodic() {
+        // Rev does not support the getter properly, so use the debug value for simulation.
+        m_simulatedArm.setInput(m_debuggingLastCommandedTotalMotorOutput * RobotController.getBatteryVoltage());
+        // Default period is 20 milliseconds
+        m_simulatedArm.update(0.02);
+        m_simulatedEncoder.setDistance(Rotation2d.fromRadians(m_simulatedArm.getAngleRads()).getRotations());
         RoboRioSim.setVInVoltage(
             BatterySim.calculateDefaultBatteryLoadedVoltage(
                 m_simulatedArm.getCurrentDrawAmps()
             )
         );
+
     }
 
     @Override
@@ -264,10 +405,12 @@ public class Arm implements Sendable {
       builder.addDoubleProperty("PIDOutput", this::dashboardGetLastPIDOutput, null);
       builder.addDoubleProperty("commandedMotorOutput", this::dashboardGetLastCommandedTotalMotorOutput, null);
       builder.addDoubleProperty("batteryVoltage", this::dashboardGetBatteryVoltage, null);
+      builder.addDoubleProperty("leftEncoder", this::dashboardGetLeftEncoderValue, null);
+      builder.addDoubleProperty("rightEncoder", this::dashboardGetRightEncoderValue, null);
       builder.addBooleanProperty("leftGood", this::dashboardGetLeftArmGood, null);
       builder.addBooleanProperty("rightGood", this::dashboardGetRightArmGood, null);
-      builder.addBooleanProperty("topLimit", this::getUpLimitSwitchPressed, null);
-      builder.addBooleanProperty("bottomLimit", this::getDownLimitSwitchPressed, null);
+      builder.addBooleanProperty("hitTopLimit", this::getUpLimitSwitchPressed, null);
+      builder.addBooleanProperty("hitBottomLimit", this::getDownLimitSwitchPressed, null);
     }
 
     double dashboardGetDesiredtArmPositionInDegrees() {
@@ -305,6 +448,14 @@ public class Arm implements Sendable {
 
     boolean dashboardGetRightArmGood() {
         return !m_detectedRightEncoderBad;
+    }
+
+    double dashboardGetLeftEncoderValue() {
+        return m_leftHexBoreEncoder.get();
+    }
+
+    double dashboardGetRightEncoderValue() {
+        return m_leftHexBoreEncoder.get();
     }
 
     // Test raising and lowering the arm
