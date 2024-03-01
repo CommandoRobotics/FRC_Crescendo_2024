@@ -58,7 +58,7 @@ public class RobotContainer {
 
     m_dispenser.setDefaultCommand(m_dispenser.dispenseAtSpeedCommand(() -> armOperatorController.getRightY()));
 
-    m_arm.setDefaultCommand(new InstantCommand(() -> m_arm.manuallyPowerArm(-armOperatorController.getLeftY()*0.3), m_arm).repeatedly());
+    m_arm.setDefaultCommand(m_arm.manualControlCommand(() -> -armOperatorController.getLeftY() * 0.3));
 
     // Configure the trigger bindings
     configureBindings();
@@ -71,9 +71,9 @@ public class RobotContainer {
   private void configureBindings() {
     // Arm Control
     // Copilot Y: Arm Up (Speaker/Source position)
-    armOperatorController.y().whileTrue(Commands.run(() -> m_arm.setAngleInDegrees(90)));
+    armOperatorController.y().whileTrue(m_arm.adjustTowardAmpCommand());
     // Copilot A: Arm Flat (intaking position)
-    armOperatorController.a().whileTrue(Commands.run(() -> m_arm.setAngleInDegrees(0)));
+    armOperatorController.a().whileTrue(m_arm.adjustTowardFloorCommand());
 
     // Dispenser Control
     // Copilton Left Trigger: Manual intake control (must press more than 15% for this to trigger).
