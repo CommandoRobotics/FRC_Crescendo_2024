@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -62,8 +63,13 @@ public class RobotContainer {
                                    () -> -driverController.getLeftX(), 
                                    () -> -driverController.getRightX()));
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
-    m_dispenser.setDefaultCommand(m_dispenser.spinCommand());
+    //m_dispenser.setDefaultCommand(m_dispenser.spinCommand());
+    m_dispenser.setDefaultCommand((new InstantCommand(() -> m_dispenser.setDispenser(armOperatorController.getRightY()), m_dispenser).repeatedly())
+    );
     // Configure the trigger bindings
+
+    m_arm.setDefaultCommand(new InstantCommand(() -> m_arm.manuallyPowerArm(-armOperatorController.getLeftY()*0.3), m_arm).repeatedly());
+
     configureBindings();
     SmartDashboard.putData("Arm", m_arm);
     SmartDashboard.putData("AutoAim", m_autoaim);
