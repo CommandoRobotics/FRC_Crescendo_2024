@@ -16,6 +16,11 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public final class Constants {
 
+  public static class AutomationConstants {
+    public static final double kAmpSpeedFactor = 0.5; // TODO: Tune this to allow easy aligning without going too slow.
+    public static final double kSourceSpeedFactor = 0.25; // TODO: Tune this to allow easy alginging without going too slow.
+  }
+
   // Arm Constants - all angles in degrees, with zero meaning flat/down and 90 degrees arm straight up.
   public static class ArmConstants {
     public static final double kMinimumAllowedAngle = 0.0;

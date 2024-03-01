@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 
-import frc.robot.commands.Feeding;
+import frc.robot.commands.FeedingCommand;
 
 public class RobotContainer {
 
@@ -42,9 +42,6 @@ public class RobotContainer {
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
       private final CommandXboxController armOperatorController =
       new CommandXboxController(OperatorConstants.kCopilotControllerPort);
-
-  private final JoystickButton armUpButton =
-    new JoystickButton(driverController.getHID(), 3);
 
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -96,23 +93,21 @@ public class RobotContainer {
     // Copilot B: Shoot (run motors while held)
     armOperatorController.b().whileTrue(m_dispenser.forceShootCommand());
 
-    // Chassis Control
+    // Driver Modes
     // Driver Start: Reset Gyro
     driverController.start().onTrue(swerveSubsystem.resetGyroCommand());
-
-    // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
-   /* armUpButton.whileTrue(
-      new Feeding(
-        m_arm,
-        m_dispenser,
-        swerveSubsystem,
-        m_autoaim,
-        m_positioning,
-        () -> driverController.getLeftY(),
-        () -> driverController.getLeftX(),
-        () -> driverController.trigger().getAsBoolean()
-      ) 
-    );*/
+    // Driver Y : Place the arm up in feeding mode (from source or to amp).
+    FeedingCommand feed = new FeedingCommand(
+      m_arm,
+      m_dispenser,
+      swerveSubsystem,
+      m_autoaim,
+      m_positioning,
+      () -> -driverController.getLeftY(),
+      () -> -driverController.getLeftX(),
+      driverController.rightTrigger()
+    );
+    driverController.y().whileTrue(feed);
   }
 
   public void simulationPeriodic(double period) {
