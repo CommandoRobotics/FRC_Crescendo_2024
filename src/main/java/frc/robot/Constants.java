@@ -33,6 +33,15 @@ public final class Constants {
     public static final int kRioDIOPortDownLimitSwitch = 3;
   }
 
+  public static class DispenserConstants {
+    public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
+    public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
+    public static final int kRioDIOPortIntakeBeamBreak = 6;
+    public static final int kRioDIOPortIndexerBeamBreak = 7;
+    public static final int kRioDIOPortShooterBeamBreak = 9;
+  }
+
   // All the following are in meters using WPI Lib Blue as the Origin
   public class FieldElements {
     // Speaker
@@ -62,6 +71,7 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kCopilotControllerPort = 1;
+    public static final double kTriggerOverrideThreshold = 0.15; // TODO: Tune this. Make sure we won't accidently hit it.
   }
 
   // Limelight Positions

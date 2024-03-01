@@ -46,8 +46,6 @@ public class RobotContainer {
   private final JoystickButton armUpButton =
     new JoystickButton(driverController.getHID(), 3);
 
-  
-
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     MathUtil.applyDeadband(driverController.getLeftY(), 0.1);
@@ -61,7 +59,7 @@ public class RobotContainer {
                                    () -> -driverController.getRightX()));
     //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
 
-    m_dispenser.setDefaultCommand((new InstantCommand(() -> m_dispenser.setDispenser(armOperatorController.getRightY()), m_dispenser).repeatedly()));
+    m_dispenser.setDefaultCommand(m_dispenser.dispenseAtSpeedCommand(() -> armOperatorController.getRightY()));
 
     m_arm.setDefaultCommand(new InstantCommand(() -> m_arm.manuallyPowerArm(-armOperatorController.getLeftY()*0.3), m_arm).repeatedly());
 
@@ -81,14 +79,22 @@ public class RobotContainer {
     armOperatorController.a().whileTrue(Commands.run(() -> m_arm.setAngleInDegrees(0)));
 
     // Dispenser Control
+    // Copilton Left Trigger: Manual intake control (must press more than 15% for this to trigger).
+    armOperatorController.leftTrigger(OperatorConstants.kTriggerOverrideThreshold).whileTrue(
+      m_dispenser.intakeAtSpeedCommand(() -> armOperatorController.getLeftTriggerAxis())
+    );
     // Copilot Left Bumper: Auto Intake
-    armOperatorController.leftBumper().whileTrue(Commands.run(() -> m_dispenser.autoIntake()));
+    armOperatorController.leftBumper().whileTrue(m_dispenser.autoIntakeCommand());
+    // Copilton Right Trigger: Manual dispense control (must press more than 15% for this to trigger).
+    armOperatorController.rightTrigger(OperatorConstants.kTriggerOverrideThreshold).whileTrue(
+      m_dispenser.dispenseAtSpeedCommand(() -> armOperatorController.getRightTriggerAxis())
+    );
     // Copilot Right Bumper: Auto Shoot (until empty)
-    armOperatorController.rightBumper().whileTrue(Commands.run(() -> m_dispenser.feedShooter()));
+    armOperatorController.rightBumper().whileTrue(m_dispenser.shootUntilEmptyCommand());
     // Copilot X: Eject notes (back through intake)
-    armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.ejectNote()));
+    armOperatorController.x().whileTrue(m_dispenser.ejectNoteCommand());
     // Copilot B: Shoot (run motors while held)
-    armOperatorController.b().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
+    armOperatorController.b().whileTrue(m_dispenser.forceShootCommand());
 
     // Chassis Control
     // Driver Start: Reset Gyro
