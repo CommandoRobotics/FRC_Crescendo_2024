@@ -84,8 +84,14 @@ public class Dispenser extends SubsystemBase {
         uppershooterMotor.setInverted(false);
     }
 
+    // Sets zero speed, but has motors hold position.
     public Command stopCommand() {
         return run(() -> stop());
+    }
+
+    // Sets zero power and allows motors to spin freely.
+    public Command releaseCommand() {
+        return run(() -> release());
     }
 
     public Command spinCommand() {
@@ -182,6 +188,9 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(speed);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
+        // Set the shooter motors to brake so they do not spin down and allow the Note to exit.
+        uppershooterMotor.setIdleMode(IdleMode.kBrake);
+        lowershooterMotor.setIdleMode(IdleMode.kBrake);
     }
 
     // This function runs the intake motors until a Note is stored in our index area.
@@ -242,10 +251,11 @@ public class Dispenser extends SubsystemBase {
     // Since the shooter motors take some amount of time to get to their max speed, we would run
     // this function before we actually call shootNoteImmediately().
     public void spinUpShooterWheels() {
-        
+        // Stop the intake (and force brake mode so a Note can't roll out).
         m_intakeMotor.set(0);
-        uppershooterMotor.set(0.07);
-        lowershooterMotor.set(0.07);
+        m_intakeMotor.setIdleMode(IdleMode.kBrake);
+        uppershooterMotor.set(DispenserConstants.kShooterIdleSpeed);
+        lowershooterMotor.set(DispenserConstants.kShooterIdleSpeed);
         
     }
 
@@ -255,7 +265,23 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(0);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
+        // Ensure motors do not roll out on their own.
+        m_intakeMotor.setIdleMode(IdleMode.kBrake);
+        uppershooterMotor.setIdleMode(IdleMode.kBrake);
+        lowershooterMotor.setIdleMode(IdleMode.kBrake);
         
+    }
+
+    // Set motor powers to zero and coast mode.
+    // Useful before/after matches so we can get notes in or out by had.
+    public void release() {
+        m_intakeMotor.set(0);
+        uppershooterMotor.set(0);
+        lowershooterMotor.set(0);
+        // Allow motors to roll freely.
+        m_intakeMotor.setIdleMode(IdleMode.kCoast);
+        uppershooterMotor.setIdleMode(IdleMode.kCoast);
+        lowershooterMotor.setIdleMode(IdleMode.kCoast);
     }
 
     // The following sends information about this subsystem to the Smart Dashboard.

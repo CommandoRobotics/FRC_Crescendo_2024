@@ -37,6 +37,7 @@ public final class Constants {
     public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
     public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
     public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kShooterIdleSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
     public static final int kRioDIOPortIntakeBeamBreak = 6;
     public static final int kRioDIOPortIndexerBeamBreak = 7;
     public static final int kRioDIOPortShooterBeamBreak = 9;
