@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
-
+import frc.robot.commands.AimingCommand;
 import frc.robot.commands.FeedingCommand;
 import frc.robot.commands.IntakingCommand;
 
@@ -119,6 +119,18 @@ public class RobotContainer {
       () -> -driverController.getRightX()
     );
     driverController.rightTrigger().whileTrue(intake);
+    // Driver B: Auto aim robot for shot.
+    AimingCommand aim = new AimingCommand(
+      m_arm,
+      m_dispenser,
+      swerveSubsystem,
+      m_autoaim,
+      m_positioning,
+      () -> -driverController.getLeftY(),
+      () -> -driverController.getLeftX(),
+      driverController.rightTrigger()
+    );
+    driverController.b().whileTrue(aim);
   }
 
   public void simulationPeriodic(double period) {
