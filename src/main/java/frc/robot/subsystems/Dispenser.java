@@ -96,6 +96,12 @@ public class Dispenser extends SubsystemBase {
         return run(() -> shootNoteImmediately());
     }
 
+    public void setDispenser(double speed) {
+        m_intakeMotor.set(speed);
+        lowershooterMotor.set(speed);
+        uppershooterMotor.set(speed);
+    }
+
     // Return true if the Intake beam brake sensor sees a note.
     boolean intakeDetectsNote() {
         // The intake sensor is high (true) when it sees the beam (light).
@@ -204,8 +210,8 @@ public class Dispenser extends SubsystemBase {
     public void spinUpShooterWheels() {
         
         m_intakeMotor.set(0);
-        uppershooterMotor.set(1.0);
-        lowershooterMotor.set(1.0);
+        uppershooterMotor.set(0.07);
+        lowershooterMotor.set(0.07);
         
     }
 
