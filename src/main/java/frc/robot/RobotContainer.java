@@ -24,6 +24,7 @@ import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 
 import frc.robot.commands.FeedingCommand;
+import frc.robot.commands.IntakingCommand;
 
 public class RobotContainer {
 
@@ -108,6 +109,16 @@ public class RobotContainer {
       driverController.rightTrigger()
     );
     driverController.y().whileTrue(feed);
+    // Driver Right Trigger: Place the arm down in intaking mode.
+    IntakingCommand intake = new IntakingCommand(
+      m_arm,
+      m_dispenser,
+      swerveSubsystem,
+      () -> -driverController.getLeftY(),
+      () -> -driverController.getLeftX(),
+      () -> -driverController.getRightX()
+    );
+    driverController.rightTrigger().whileTrue(intake);
   }
 
   public void simulationPeriodic(double period) {
