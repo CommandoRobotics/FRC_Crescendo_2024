@@ -7,7 +7,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 public class AutoAim implements Sendable {
     boolean m_yawAligned = false; // Stores whether the last calculation deterimened yaw was good enough to shoot.
     boolean m_pitchAligned = false; // Stores whether the last calculation deterimened arm was good enough to shoot.
-
+    //10.58.89.12
     // Returns the yaw to turn to based on current position.
     // Inputs are based on the WPILib Blue coordinate system.
     public double getDesiredYawInDegreesToSpeaker(double currentX, double currentY, boolean isBlueAlliance) {

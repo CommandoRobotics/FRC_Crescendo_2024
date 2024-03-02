@@ -8,29 +8,20 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
-
-import frc.robot.commands.Feeding;
 
 public class RobotContainer {
 
 
   // Subsystems
-  Arm m_arm = new Arm();
-  Dispenser m_dispenser = new Dispenser();
+  Arm armSubsystem = new Arm();
+  Dispenser dispenserSubsystem = new Dispenser();
   SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
 
   // Other Utilities
@@ -38,67 +29,138 @@ public class RobotContainer {
   Positioning m_positioning = new Positioning();
 
   // Controllers
-  private final CommandXboxController driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
-      private final CommandXboxController armOperatorController =
-      new CommandXboxController(OperatorConstants.kCopilotControllerPort);
-
-  private final JoystickButton armUpButton =
-    new JoystickButton(driverController.getHID(), 3);
-
-  
+  private final CommandXboxController driverController = new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
 
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    MathUtil.applyDeadband(driverController.getLeftY(), 0.1);
-    MathUtil.applyDeadband(driverController.getLeftX(), 0.1);
-    MathUtil.applyDeadband(driverController.getRightX(), 0.1);
 
-    //Default commands
+    //Default Commands
+
+    //Default drive using the driver controller (field oriented)
     swerveSubsystem.setDefaultCommand(
-      swerveSubsystem.driveCommand(() -> -driverController.getLeftY(),
-                                   () -> -driverController.getLeftX(), 
-                                   () -> -driverController.getRightX()));
-    //swerveSubsystem.setDefaultCommand(swerveSubsystem.driveCommand(() -> (-0.2), () -> (0.2), () -> (0))); // Testing command
+      swerveSubsystem.driveCommand(() -> -MathUtil.applyDeadband(driverController.getLeftY(), 0.1),
+                                   () -> -MathUtil.applyDeadband(driverController.getLeftX(), 0.1), 
+                                   () -> -MathUtil.applyDeadband(driverController.getRightX(), 0.1),
+                                   true));
 
-    m_dispenser.setDefaultCommand((new InstantCommand(() -> m_dispenser.setDispenser(armOperatorController.getRightY()), m_dispenser).repeatedly()));
-
-    m_arm.setDefaultCommand(new InstantCommand(() -> m_arm.manuallyPowerArm(-armOperatorController.getLeftY()*0.3), m_arm).repeatedly());
+    //Spin the shooter wheels (ALWAYS :D) 
+    //dispenserSubsystem.setDefaultCommand(dispenserSubsystem.spinCommand());
+    
+    //Manual control of all motors in the dispenser - operator right stick y EMERGENCY ONLY
+    //dispenserSubsystem.setDefaultCommand((new InstantCommand(() -> dispenserSubsystem.setDispenser(operatorController.getLeftY()), dispenserSubsystem).repeatedly()));
+    
+    //Manual control of the arm - operator left stick Y
+    armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
     // Configure the trigger bindings
     configureBindings();
-    SmartDashboard.putData("Arm", m_arm);
-    SmartDashboard.putData("AutoAim", m_autoaim);
-    SmartDashboard.putData("Dispenser", m_dispenser);
-    SmartDashboard.putData("Positioning", m_positioning);
+
+    SmartDashboard.putData(armSubsystem);
+    SmartDashboard.putData(dispenserSubsystem);
   }
 
   private void configureBindings() {
-    // Arm Control
-    // Copilot Y: Arm Up (Speaker/Source position)
-    armOperatorController.y().whileTrue(Commands.run(() -> m_arm.setAngleInDegrees(90)));
-    // Copilot A: Arm Flat (intaking position)
-    armOperatorController.a().whileTrue(Commands.run(() -> m_arm.setAngleInDegrees(0)));
+
+    //Driver Controller
+
+    // Driver Left Trigger: Outake
+    driverController.leftTrigger(0.1)
+      .whileTrue(new InstantCommand(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+    // Driver Right Trigger: Intake  // TODO change to autointake if beanbreak works
+    driverController.rightTrigger(0.1)
+      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+    //TODO actually do autoaim
+    // Driver A: AutoAim Speaker
+
+    // Driver B: AutoAim Source
+
+    // Driver Start: Reset gyro/field oriented
+    driverController.start().onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
+
+
+    // Arm Controller
+
+    // Operator A: Arm Flat (using limit switch)
+    operatorController.a()
+      .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
+                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator B: Eject
+    operatorController.b()
+      .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
+      .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
+
+    // Operator Y: Arm Up (using limit switch) //TODO might change to PID if we dont HAVE a limit switch
+    operatorController.y()
+      .whileTrue(Commands.run(() -> armSubsystem.setAngleInDegrees(90), armSubsystem))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator Dpad Up: Arm Up (using PID) //TODO find full arm up if theres no limit switch
+    operatorController.povUp()
+      .whileTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(90), armSubsystem)
+                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
+    operatorController.povDown()
+      .whileTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
+                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator Dpad Left: Go to Source height
+    operatorController.povLeft()
+      .whileTrue(armSubsystem.adjustTowardSourceCommand())
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator Dpad Right: Go to Amp height
+    operatorController.povRight()
+      .whileTrue(armSubsystem.adjustTowardAmpCommand())
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
+    operatorController.leftTrigger(0.1)
+      .whileTrue(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
+    operatorController.rightTrigger(0.1)
+      .whileTrue(new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+    // Operator Left Bumper: Auto Intake
+    operatorController.leftBumper()
+      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+
+    // Operator Right Bumper: Auto Shoot (until empty)
+    operatorController.rightBumper()
+      .whileTrue(Commands.run(() -> dispenserSubsystem.feedShooter(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+  
+
+
+
+
 
     // Dispenser Control
-    // Copilot Left Bumper: Auto Intake
-    armOperatorController.leftBumper().whileTrue(Commands.run(() -> m_dispenser.autoIntake()));
-    // Copilot Right Bumper: Auto Shoot (until empty)
-    armOperatorController.rightBumper().whileTrue(Commands.run(() -> m_dispenser.feedShooter()));
-    // Copilot X: Eject notes (back through intake)
-    armOperatorController.x().whileTrue(Commands.run(() -> m_dispenser.ejectNote()));
-    // Copilot B: Shoot (run motors while held)
-    armOperatorController.b().whileTrue(Commands.run(() -> m_dispenser.shootNoteImmediately()));
+    
+   
 
-    // Chassis Control
-    // Driver Start: Reset Gyro
-    driverController.start().onTrue(Commands.run(() -> swerveSubsystem.resetGyro()));
 
+    // Chassis
     // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
    /* armUpButton.whileTrue(
       new Feeding(
-        m_arm,
-        m_dispenser,
+        armSubsystem,
+        dispenserSubsystem,
         swerveSubsystem,
         m_autoaim,
         m_positioning,

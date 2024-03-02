@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
+import java.util.function.DoubleSupplier;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -80,13 +82,17 @@ public class Dispenser extends SubsystemBase {
         
     }
 
+
+ 
     public Command stopCommand() {
         return run( () -> stop());
     }
 
-    public Command spinCommand() {
-        return run( () -> spinUpShooterWheels());
+    public Command manualSpinCommand(DoubleSupplier threshold) {
+        return run( () -> spinThreshold(threshold.getAsDouble()));
     }
+
+ 
 
     public Command autoIntakeCommand() {
         return run(() -> autoIntake());
@@ -96,6 +102,17 @@ public class Dispenser extends SubsystemBase {
         return run(() -> shootNoteImmediately());
     }
 
+
+
+
+    public Command manualShootCommand(DoubleSupplier speed) {
+        return run( () -> setDispenser(speed.getAsDouble()));
+    }
+
+    /**
+     * Sets all the dispenser motors to the given speed
+     * @param speed
+     */
     public void setDispenser(double speed) {
         m_intakeMotor.set(speed);
         lowershooterMotor.set(speed);
@@ -114,6 +131,12 @@ public class Dispenser extends SubsystemBase {
     boolean indexerDetectsNote() {
         boolean beamIsBroken = !m_indexerBeamBreak.get();
         return beamIsBroken;
+    }
+
+    public void spinThreshold(double threshold) {
+        m_intakeMotor.set(0);
+        uppershooterMotor.set(threshold);
+        lowershooterMotor.set(threshold);
     }
    
     // Return true if the Shooter beam brake sensor sees a note.
@@ -152,21 +175,23 @@ public class Dispenser extends SubsystemBase {
     // When we have a note stored, it turns off the intake motors so we do not accidently
     // intake another Note.
     public void autoIntake() {
-        if (indexerDetectsNote()) {
-            // Note is in indexer.
-            m_intakeMotor.set(0);
-        } else {
-            // No Note yet
-            intakeNote();
-        }
+      if (indexerDetectsNote() && !intakeDetectsNote()) {
+        m_intakeMotor.set(-0.1);
+    } else if (indexerDetectsNote()) {
+        // Note is in indexer.
+        m_intakeMotor.set(0);
+    }  else {
+        // No Note yet
+        intakeNote();
+    }
     }
 
     // This function runs the motors in reverse to get rid of a note without shooting it.
     // An example of needing this is if we accidently intake a second Note.
     public void ejectNote() {
-        m_intakeMotor.set(-0.5);
-        uppershooterMotor.set(-0.5);
-        lowershooterMotor.set(-0.5);
+        m_intakeMotor.set(-0.4);
+        uppershooterMotor.set(-0.4);
+        lowershooterMotor.set(-0.4);
     }
 
     // This function runs all the motors in reverse if there is a Note anywhere in the dispenser. When there are no notes in the dispenser, it turns off the intake and resumes spinning up the shooter motors.
@@ -210,8 +235,8 @@ public class Dispenser extends SubsystemBase {
     public void spinUpShooterWheels() {
         
         m_intakeMotor.set(0);
-        uppershooterMotor.set(0.07);
-        lowershooterMotor.set(0.07);
+        uppershooterMotor.set(1);
+        lowershooterMotor.set(1);
         
     }
 

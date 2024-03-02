@@ -222,7 +222,6 @@ public class Arm extends SubsystemBase {
     // Percentage should be from -1.0 to +1.0.
     // DO NOT use autoControl and manual control at the same time.
     public void manuallyPowerArm(double motorPercent) {
-        // Protect from values outside of what is allowed.
         if (motorPercent > 1.0) {
             motorPercent = 1.0;
         } else if (motorPercent < -1.0) {
@@ -233,16 +232,31 @@ public class Arm extends SubsystemBase {
         m_rightMotor.set(motorPercent);
     }
 
-    // Sets the target position of the Arm.
-    // Arm in the intaking position (horizontal) is considered 0 degrees.
+    public void manuallyPowerArmRestrained(double motorPercent) {
+        if (motorPercent < 0) {
+            motorPercent = motorPercent * 0.16;
+        } else if (motorPercent >= 0) {
+            motorPercent = motorPercent * 0.3;
+        }
+        m_debuggingLastCommandedTotalMotorOutput = motorPercent;
+        m_leftMotor.set(motorPercent);
+        m_rightMotor.set(motorPercent);
+    }
+
+    /** Sets the target position of the Arm.
+     * Arm in the intaking position (horizontal) is considered 0 degrees.
+     */
     public void setAngleInDegrees(double angleInDegrees) {
         // Protect against angles that are not allowed
         if (angleInDegrees < ArmConstants.kMinimumAllowedAngle) {
             angleInDegrees = ArmConstants.kMinimumAllowedAngle;
         } else if (angleInDegrees > ArmConstants.kMaximumAllowedAngle) {
             angleInDegrees = ArmConstants.kMaximumAllowedAngle;
+        } else {
+             m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
+
+
         }
-        m_desiredAngle = Rotation2d.fromDegrees(angleInDegrees);
     }
 
     // Uses the preset angle for intkaing from the floor.
@@ -256,6 +270,11 @@ public class Arm extends SubsystemBase {
 
     public void setAmpAngle() {
         setAngleInDegrees(ArmConstants.kAmpAngle);
+    }
+
+    // resets left arm encoder
+    public void resetLeftEncoder() {
+        m_leftHexBoreEncoder.reset();
     }
 
     // Returns the angle the left Arm is at.
@@ -351,7 +370,7 @@ public class Arm extends SubsystemBase {
         m_debuggingLastPIDOutput = pidOutput;
         double totalMotorOutput = feedForwardOutput + pidOutput;
         // Make sure we do not set the motors beyond what they can actually do.
-        totalMotorOutput = MathUtil.clamp(totalMotorOutput, -1.0, 1.0);
+        totalMotorOutput = MathUtil.clamp(totalMotorOutput, -0.16, 0.3);
         if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
             totalMotorOutput = 0;
         } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
