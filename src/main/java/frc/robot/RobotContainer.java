@@ -15,6 +15,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
+import frc.robot.commands.AimingCommand;
+import frc.robot.commands.FeedingCommand;
+import frc.robot.commands.IntakingCommand;
 
 public class RobotContainer {
 
@@ -155,30 +158,43 @@ public class RobotContainer {
       .onTrue(Commands.runOnce(() -> armSubsystem.resetRightEncoder(), armSubsystem))
       .onFalse(armSubsystem.stopCommand());
   
-
-
-
-
-
-    // Dispenser Control
-    
-   
-
-
-    // Chassis
-    // Driver 3 (top): Place the arm up in feeding mode (from source or to amp).
-   /* armUpButton.whileTrue(
-      new Feeding(
-        armSubsystem,
-        dispenserSubsystem,
-        swerveSubsystem,
-        m_autoaim,
-        m_positioning,
-        () -> driverController.getLeftY(),
-        () -> driverController.getLeftX(),
-        () -> driverController.trigger().getAsBoolean()
-      ) 
-    );*/
+    // // Driver Modes
+    // // Driver Start: Reset Gyro
+    // driverController.start().onTrue(swerveSubsystem.resetGyroCommand());
+    // // Driver Y : Place the arm up in feeding mode (from source or to amp).
+    // FeedingCommand feed = new FeedingCommand(
+    //   m_arm,
+    //   m_dispenser,
+    //   swerveSubsystem,
+    //   m_autoaim,
+    //   m_positioning,
+    //   () -> -driverController.getLeftY(),
+    //   () -> -driverController.getLeftX(),
+    //   driverController.rightTrigger()
+    // );
+    // driverController.y().whileTrue(feed);
+    // // Driver Right Trigger: Place the arm down in intaking mode.
+    // IntakingCommand intake = new IntakingCommand(
+    //   m_arm,
+    //   m_dispenser,
+    //   swerveSubsystem,
+    //   () -> -driverController.getLeftY(),
+    //   () -> -driverController.getLeftX(),
+    //   () -> -driverController.getRightX()
+    // );
+    // driverController.rightTrigger().whileTrue(intake);
+    // // Driver B: Auto aim robot for shot.
+    // AimingCommand aim = new AimingCommand(
+    //   m_arm,
+    //   m_dispenser,
+    //   swerveSubsystem,
+    //   m_autoaim,
+    //   m_positioning,
+    //   () -> -driverController.getLeftY(),
+    //   () -> -driverController.getLeftX(),
+    //   driverController.rightTrigger()
+    // );
+    // driverController.b().whileTrue(aim);
   }
 
   public void simulationPeriodic(double period) {

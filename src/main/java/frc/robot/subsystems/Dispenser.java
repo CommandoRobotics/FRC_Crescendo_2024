@@ -15,6 +15,9 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.math.MathUtil;
+
+import java.util.function.DoubleSupplier;
 
 import java.util.function.DoubleSupplier;
 
@@ -22,6 +25,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import frc.robot.Constants.DispenserConstants;
 
 // This class controls the internal electronics of the Dispenser as well as providing
 // an interface for controlling it.
@@ -64,9 +69,9 @@ public class Dispenser extends SubsystemBase {
         uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
         lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
 
-        m_intakeBeamBreak = new DigitalInput(6);
-        m_indexerBeamBreak = new DigitalInput(7);
-        m_shooterBeamBreak = new DigitalInput(9);
+        m_intakeBeamBreak = new DigitalInput(DispenserConstants.kRioDIOPortIntakeBeamBreak);
+        m_indexerBeamBreak = new DigitalInput(DispenserConstants.kRioDIOPortIndexerBeamBreak);
+        m_shooterBeamBreak = new DigitalInput(DispenserConstants.kRioDIOPortShooterBeamBreak);
 
         // Set the intake motor to "coast" (allow rotation) when we are not commanding them. This
         // will allow people to pull a note out of the intake when our code is not running.
@@ -78,18 +83,25 @@ public class Dispenser extends SubsystemBase {
         // we think of positive speeds as brining in a Note, but the motor is rotate such that positive
         // would normally spit the Note out.
         m_intakeMotor.setInverted(false);
-        uppershooterMotor.setInverted(false);        
-        
+        uppershooterMotor.setInverted(false);
     }
 
-
- 
+    // Sets zero speed, but has motors hold position.
     public Command stopCommand() {
-        return run( () -> stop());
+        return run(() -> stop());
+    }
+
+    // Sets zero power and allows motors to spin freely.
+    public Command releaseCommand() {
+        return run(() -> release());
     }
 
     public Command manualSpinCommand(DoubleSupplier threshold) {
         return run( () -> spinThreshold(threshold.getAsDouble()));
+    }
+
+    public Command spinCommand() {
+        return run(() -> spinUpShooterWheels());
     }
 
  
@@ -98,8 +110,34 @@ public class Dispenser extends SubsystemBase {
         return run(() -> autoIntake());
     }
 
-    public Command shootCommand() {
-        return run(() -> shootNoteImmediately());
+    public Command forceShootCommand() {
+        return run(() -> feedShooter());
+    }
+
+    public Command shootUntilEmptyCommand() {
+        return run(() -> feedShooter());
+    }
+
+    public Command ejectNoteCommand() {
+        return run(() -> ejectNote());
+    }
+
+    public Command ampDispenseCommand() {
+        return run(() -> setDispenser(DispenserConstants.kAmpDispenseSpeed));
+    }
+
+    // Speed should be in the range 0 (stop) to 1 (shoot full power)
+    public Command dispenseAtSpeedCommand(DoubleSupplier speed) {
+        return run(() -> setDispenser(speed.getAsDouble()));
+    }
+
+    public Command sourceIntakeCommand() {
+        return run(() -> intakeAtSpeed(DispenserConstants.kSourceIntakeSpeed));
+    }
+
+    // Speed should be in the range 0 (stop) to 1 (shoot full power)
+    public Command intakeAtSpeedCommand(DoubleSupplier speed) {
+        return run(() -> intakeAtSpeed(speed.getAsDouble()));
     }
 
 
@@ -114,6 +152,8 @@ public class Dispenser extends SubsystemBase {
      * @param speed
      */
     public void setDispenser(double speed) {
+        // Only allow positive speeds, from 0 to 1 (full power).
+        speed = MathUtil.clamp(speed, 0, 1.0);
         m_intakeMotor.set(speed);
         lowershooterMotor.set(speed);
         uppershooterMotor.set(speed);
@@ -165,10 +205,17 @@ public class Dispenser extends SubsystemBase {
     // This function runs the motors to pull in a Note (but not shoot it yet).
     public void intakeNote() {
         // Turn the intake wheels at 50% (0.5) speed.
-        m_intakeMotor.set(0.5);
+        intakeAtSpeed(DispenserConstants.kFloorIntakeSpeed);
+    }
+
+    // Runs intake at the specified speed of 0 (stop) to 1 (full speed)
+    public void intakeAtSpeed(double speed) {
+        m_intakeMotor.set(speed);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
-        
+        // Set the shooter motors to brake so they do not spin down and allow the Note to exit.
+        uppershooterMotor.setIdleMode(IdleMode.kBrake);
+        lowershooterMotor.setIdleMode(IdleMode.kBrake);
     }
 
     // This function runs the intake motors until a Note is stored in our index area.
@@ -218,8 +265,6 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(1.0);
         uppershooterMotor.set(1.0);
         lowershooterMotor.set(1.0);
-        
-
     }
 
     // This function runs the intake motors to push the Note through the shooter, until the Note is fully out. Then it turns off the intake motors, but keeps the shooter motors spinning.
@@ -233,10 +278,11 @@ public class Dispenser extends SubsystemBase {
     // Since the shooter motors take some amount of time to get to their max speed, we would run
     // this function before we actually call shootNoteImmediately().
     public void spinUpShooterWheels() {
-        
+        // Stop the intake (and force brake mode so a Note can't roll out).
         m_intakeMotor.set(0);
-        uppershooterMotor.set(1);
-        lowershooterMotor.set(1);
+        m_intakeMotor.setIdleMode(IdleMode.kBrake);
+        uppershooterMotor.set(DispenserConstants.kShooterIdleSpeed);
+        lowershooterMotor.set(DispenserConstants.kShooterIdleSpeed);
         
     }
 
@@ -246,7 +292,23 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(0);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
+        // Ensure motors do not roll out on their own.
+        m_intakeMotor.setIdleMode(IdleMode.kBrake);
+        uppershooterMotor.setIdleMode(IdleMode.kBrake);
+        lowershooterMotor.setIdleMode(IdleMode.kBrake);
         
+    }
+
+    // Set motor powers to zero and coast mode.
+    // Useful before/after matches so we can get notes in or out by had.
+    public void release() {
+        m_intakeMotor.set(0);
+        uppershooterMotor.set(0);
+        lowershooterMotor.set(0);
+        // Allow motors to roll freely.
+        m_intakeMotor.setIdleMode(IdleMode.kCoast);
+        uppershooterMotor.setIdleMode(IdleMode.kCoast);
+        lowershooterMotor.setIdleMode(IdleMode.kCoast);
     }
 
     // The following sends information about this subsystem to the Smart Dashboard.

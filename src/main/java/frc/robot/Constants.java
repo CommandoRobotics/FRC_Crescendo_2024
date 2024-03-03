@@ -16,6 +16,11 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public final class Constants {
 
+  public static class AutomationConstants {
+    public static final double kAmpSpeedFactor = 0.5; // TODO: Tune this to allow easy aligning without going too slow.
+    public static final double kSourceSpeedFactor = 0.25; // TODO: Tune this to allow easy alginging without going too slow.
+  }
+
   // Arm Constants - all angles in degrees, with zero meaning flat/down and 90 degrees arm straight up.
   public static class ArmConstants {
     public static final double kMinimumAllowedAngle = 0.0;
@@ -31,6 +36,16 @@ public final class Constants {
     public static final int kRioDIOPortRightEncoder = 1;
     public static final int kRioDIOPortUpLimitSwitch = 2;
     public static final int kRioDIOPortDownLimitSwitch = 3;
+  }
+
+  public static class DispenserConstants {
+    public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
+    public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
+    public static final double kShooterIdleSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final int kRioDIOPortIntakeBeamBreak = 6;
+    public static final int kRioDIOPortIndexerBeamBreak = 7;
+    public static final int kRioDIOPortShooterBeamBreak = 9;
   }
 
   // All the following are in meters using WPI Lib Blue as the Origin
@@ -62,6 +77,7 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
     public static final int kOperatorControllerPort = 1;
+    public static final double kTriggerOverrideThreshold = 0.15; // TODO: Tune this. Make sure we won't accidently hit it.
   }
 
   // Limelight Positions
