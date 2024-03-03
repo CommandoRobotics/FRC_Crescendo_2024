@@ -144,6 +144,16 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.feedShooter(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
+    // Operator back: reset left encoder
+    operatorController.back()
+      .onTrue(Commands.runOnce(() -> armSubsystem.resetLeftEncoder(), armSubsystem))
+      .onFalse(armSubsystem.stopCommand());
+
+      
+    // Operator start: reset right encoder
+    operatorController.start()
+      .onTrue(Commands.runOnce(() -> armSubsystem.resetRightEncoder(), armSubsystem))
+      .onFalse(armSubsystem.stopCommand());
   
 
 

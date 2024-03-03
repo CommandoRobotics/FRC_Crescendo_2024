@@ -277,6 +277,11 @@ public class Arm extends SubsystemBase {
         m_leftHexBoreEncoder.reset();
     }
 
+    // resets right arm encoder
+    public void resetRightEncoder() {
+        m_rightHexBoreEncoder.reset();
+    }
+
     // Returns the angle the left Arm is at.
     public Rotation2d getLeftPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_leftHexBoreEncoder.get());
