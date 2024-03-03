@@ -29,20 +29,26 @@ public final class Constants {
     public static final double kAmpAngle = 89; // TODO: Tune this angle. The angle when placing in the amp.
     public static final double kSourceAngle = 65; // TODO: Tune this angle. The angle when intaking from the source.
     public static final boolean kLeftArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
-    public static final boolean kRightArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
-    public static final double kLeftArmEncoderOffsetInRotations = 0.1686; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
-    public static final double kRightArmEncoderOffsetInRotations = 0.8313; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final boolean kRightArmReversed = true; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
+    public static final double kLeftArmEncoderOffsetInRotations = .321; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final double kRightArmEncoderOffsetInRotations = 0.831; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
     public static final int kRioDIOPortLeftEncoder = 0;
     public static final int kRioDIOPortRightEncoder = 1;
     public static final int kRioDIOPortUpLimitSwitch = 2;
     public static final int kRioDIOPortDownLimitSwitch = 3;
+    public static final double kArmDegreeOffset = -61.18;
+    public static final double kArmRadianOffset = -1.069;
+    public static final double kMaxSubwooferAngle = 30.0; //TODO tune this
+
   }
 
   public static class DispenserConstants {
     public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
     public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
     public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
-    public static final double kShooterIdleSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final double kShooterIdleSpeed = 1; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final double kShooterSubwooferSpeed = 1; // TODO: Tune this. As slow as possible, without affecting shots.
+
     public static final int kRioDIOPortIntakeBeamBreak = 6;
     public static final int kRioDIOPortIndexerBeamBreak = 7;
     public static final int kRioDIOPortShooterBeamBreak = 9;

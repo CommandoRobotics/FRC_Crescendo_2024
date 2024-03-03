@@ -26,6 +26,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import frc.robot.Constants;
 import frc.robot.Constants.DispenserConstants;
 
 // This class controls the internal electronics of the Dispenser as well as providing
@@ -262,9 +263,9 @@ public class Dispenser extends SubsystemBase {
         // quickly, the shooter wheels can make it go even faster. But if the Note was traveling
         // slowly through the intake, it won't come out of the shooter as fast as possible.
         // So, set the intake speed to 100%.
-        m_intakeMotor.set(1.0);
-        uppershooterMotor.set(1.0);
-        lowershooterMotor.set(1.0);
+        m_intakeMotor.set(Constants.DispenserConstants.kShooterSubwooferSpeed);
+        uppershooterMotor.set(Constants.DispenserConstants.kShooterSubwooferSpeed);
+        lowershooterMotor.set(Constants.DispenserConstants.kShooterSubwooferSpeed);
     }
 
     // This function runs the intake motors to push the Note through the shooter, until the Note is fully out. Then it turns off the intake motors, but keeps the shooter motors spinning.

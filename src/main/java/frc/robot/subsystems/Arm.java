@@ -94,8 +94,6 @@ public class Arm extends SubsystemBase {
         m_rightMotor.setInverted(true);
         m_leftHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortLeftEncoder); // Connected to this RoboRio DIO port.
         m_rightHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortRightEncoder); // Connected to this RoboRio DIO port.
-        m_leftHexBoreEncoder.setPositionOffset(ArmConstants.kLeftArmEncoderOffsetInRotations);
-        m_rightHexBoreEncoder.setPositionOffset(ArmConstants.kRightArmEncoderOffsetInRotations);
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
         m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
@@ -286,14 +284,14 @@ public class Arm extends SubsystemBase {
     public Rotation2d getLeftPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_leftHexBoreEncoder.get());
         // Encoder offset was set in the constructor.
-        return getAdjustedPosition(measuredAngle, Rotation2d.fromDegrees(0), ArmConstants.kLeftArmReversed);
+        return getAdjustedPosition(measuredAngle, Rotation2d.fromRotations(Constants.ArmConstants.kLeftArmEncoderOffsetInRotations), ArmConstants.kLeftArmReversed);
     }
 
     // Returns the angle the right Arm is at.
     public Rotation2d getRightPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_rightHexBoreEncoder.get());
         // Encoder offset was set in the constructor.
-        return getAdjustedPosition(measuredAngle, Rotation2d.fromDegrees(0), ArmConstants.kRightArmReversed);
+        return getAdjustedPosition(measuredAngle, Rotation2d.fromRotations(Constants.ArmConstants.kRightArmEncoderOffsetInRotations), ArmConstants.kRightArmReversed);
     }
 
     // Determines actual angle, adjusting for the encoder's offest and whether it is reversed.
@@ -334,6 +332,16 @@ public class Arm extends SubsystemBase {
         }
     }
 
+    public void restrictArmAngleSubwoofer(double motorpercent) {
+        if (getCurrentArmPosition().getDegrees() > Constants.ArmConstants.kMaxSubwooferAngle) {
+            manuallyPowerArm(0);
+        }
+        else {
+            manuallyPowerArmRestrained(motorpercent);
+        }
+    }
+
+
     public boolean armEncoderReasonable(Rotation2d measuredPosition) {
         // Arm should not go (much) below horizontal.
         if (measuredPosition.getDegrees() < 0) {
@@ -354,6 +362,9 @@ public class Arm extends SubsystemBase {
             return getRightPosition();
         }
     }
+
+
+
 
     public boolean getDownLimitSwitchPressed() {
         boolean isLimitSwitchPressed = !m_downLimitSwitch.get();
@@ -445,6 +456,8 @@ public class Arm extends SubsystemBase {
         return getCurrentArmPosition().getDegrees();
     }
 
+
+
     double dashboardGetArmVoltage() {
         return m_leftMotor.get() * 12;
         //return m_leftMotor.get() * RobotController.getBatteryVoltage();
@@ -479,7 +492,7 @@ public class Arm extends SubsystemBase {
     }
 
     double dashboardGetRightEncoderValue() {
-        return m_leftHexBoreEncoder.get();
+        return m_rightHexBoreEncoder.get();
     }
 
     // Test raising and lowering the arm

@@ -88,7 +88,8 @@ public class RobotContainer {
 
     // Arm Controller
 
-    // Operator A: Arm Flat (using limit switch)
+    // Operator A: Arm Flat (using limit switch
+
     operatorController.a()
       .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
                   .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
@@ -149,14 +150,12 @@ public class RobotContainer {
 
     // Operator back: reset left encoder
     operatorController.back()
-      .onTrue(Commands.runOnce(() -> armSubsystem.resetLeftEncoder(), armSubsystem))
-      .onFalse(armSubsystem.stopCommand());
+      .onTrue(Commands.runOnce(() -> armSubsystem.resetLeftEncoder(), armSubsystem));
 
       
     // Operator start: reset right encoder
     operatorController.start()
-      .onTrue(Commands.runOnce(() -> armSubsystem.resetRightEncoder(), armSubsystem))
-      .onFalse(armSubsystem.stopCommand());
+      .onTrue(Commands.runOnce(() -> armSubsystem.resetRightEncoder(), armSubsystem));
   
     // // Driver Modes
     // // Driver Start: Reset Gyro
