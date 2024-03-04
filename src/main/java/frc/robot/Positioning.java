@@ -231,7 +231,7 @@ public class Positioning implements Sendable {
     // Call this to force simulated values for X, Y, and Yaw.
     public void simulationPeriodic(double x, double y, double yaw) {
         NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight");
-        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limeligh-backup");
+        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limelight-backup");
 
         final double simulateAcquired = 1;
         limelightTable1.getEntry("tv").setDouble(simulateAcquired);
