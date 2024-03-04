@@ -395,7 +395,7 @@ public class Arm extends SubsystemBase {
     // Returns false if there is an issue with the arm.
     // DO NOT use autoControl and manual control at the same time.
     public boolean autoControl() {
-        double feedForwardOutput = m_armFeedFoward.calculate(getCurrentArmPosition().getRadians(), 1.0);
+        double feedForwardOutput = tableBasedFeedForwardVoltage(getCurrentArmPosition());
         m_debbugingLastFeedForwardOutput = feedForwardOutput;
         double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), m_desiredAngle.getRadians());
         m_debuggingLastPIDOutput = pidOutput;
@@ -412,6 +412,50 @@ public class Arm extends SubsystemBase {
         m_rightMotor.set(totalMotorOutput);
         
         return true;
+    }
+
+    // Returns a feedfoward value based on measured values.
+    public double tableBasedFeedForwardVoltage(Rotation2d desiredAngle) {
+        // TODO: Test arm at more angles with manual control and provide appropriate feed foward values.
+        double measuredAnglesDegrees[] = {23, 33, 65};
+        double measuredForwardVoltage[] = {1.66, 1.0, 0.33};
+        return interpolateValue(desiredAngle.getDegrees(), measuredAnglesDegrees, measuredForwardVoltage);
+    }
+
+    // This function provides a best guess for a value, based on where it fits within a table of known values.
+    // Imagine you have a graph with points (X/Y coordinates) that you have mesuared and you want to guess
+    // what a new point will be based on an X value. You want to find the correspoding Y value.
+    // The guess is made by "drawing a line" between the two closest points and finding the value of Y at the
+    // provided X point. If the X is less than the lowest "measured" point, we will just return the Y of the
+    // lowest point. Similiarly, if the X is larger than the largest measured y value, we will just return the
+    // y of the largest point.
+    public double interpolateValue(double currentX, double[] xArray, double[] yArray) {
+        for (int i = 0; i < xArray.length; ++i) {
+            // Keep going until we find an X value that is more than the current one we have.
+            if (currentX < xArray[i]) {
+                // Check to see if we are lower than any X values in our array.
+                if (i == 0) {
+                    // We are too low, just provide the Y value of the lowest X.
+                    return yArray[0];
+                } else {
+                    // Our current X falls between two points on the graph.
+                    // First, calculate the slope of the line.
+                    double x1 = xArray[i-1];
+                    double y1 = yArray[i-1];
+                    double x2 = xArray[i];
+                    double y2 = yArray[i];
+                    double slope = (y2 - y1) / (x2 - x1);
+                    // Next, move along the line to the current x point
+                    double y = slope * (currentX - x1) + y1;
+                    return y;
+                }
+            }
+        }
+        // If we make it to the end of the loop, our currentX is larger than any mesaured X values.
+        // Just return the y value of the largest X we have.
+        // Remember that Java uses zero-based indexes, so we have to subtract 1 from the length to get the highest index.
+        int biggestIndex = yArray.length - 1;
+        return yArray[biggestIndex];
     }
 
     // Returns an angle that corresponds to the percentage within the range.
