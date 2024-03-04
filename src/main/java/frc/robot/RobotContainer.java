@@ -8,6 +8,9 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -35,6 +38,7 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(OperatorConstants.kDriverControllerPort);
   private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
 
+
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
 
@@ -55,12 +59,17 @@ public class RobotContainer {
     
     //Manual control of the arm - operator left stick Y
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
-
     // Configure the trigger bindings
     configureBindings();
 
+    //dispenserSubsystem.setDefaultCommand(dispenserSubsystem.forceShootCommand());
+
     SmartDashboard.putData(armSubsystem);
     SmartDashboard.putData(dispenserSubsystem);
+    SmartDashboard.putData(m_positioning);
+    SmartDashboard.putData(m_autoaim);
+
+
   }
 
   private void configureBindings() {
@@ -72,10 +81,14 @@ public class RobotContainer {
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
+
+    
+
+
     // Driver Right Trigger: Intake  // TODO change to autointake if beanbreak works
-    driverController.rightTrigger(0.1)
-      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
+   // driverController.rightTrigger(0.1)
+    //  .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+    //  .onFalse(dispenserSubsystem.stopCommand());
 
     //TODO actually do autoaim
     // Driver A: AutoAim Speaker
@@ -95,10 +108,9 @@ public class RobotContainer {
                   .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    // Operator B: Eject
-    operatorController.b()
-      .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
-      .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
+    /*operatorController.leftBumper()
+      .whileTrue(armSubsystem.adjustTowardSubwooferCommand());
+ */
 
     // Operator Y: Arm Up (using limit switch) //TODO might change to PID if we dont HAVE a limit switch
     operatorController.y()
@@ -127,28 +139,7 @@ public class RobotContainer {
       .whileTrue(armSubsystem.adjustTowardAmpCommand())
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
-    operatorController.leftTrigger(0.1)
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
-    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
-    operatorController.rightTrigger(0.1)
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
-    // Operator Left Bumper: Auto Intake
-    operatorController.leftBumper()
-      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
-
-    // Operator Right Bumper: Auto Shoot (until empty)
-    operatorController.rightBumper()
-      .whileTrue(Commands.run(() -> dispenserSubsystem.feedShooter(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
-    // Operator back: reset left encoder
+          // Operator back: reset left encoder
     operatorController.back()
       .onTrue(Commands.runOnce(() -> armSubsystem.resetLeftEncoder(), armSubsystem));
 
@@ -156,6 +147,32 @@ public class RobotContainer {
     // Operator start: reset right encoder
     operatorController.start()
       .onTrue(Commands.runOnce(() -> armSubsystem.resetRightEncoder(), armSubsystem));
+
+      
+//DISPENSER SUBSYSTEM
+
+     // Operator B: Eject
+    operatorController.b()
+      .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
+      .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
+
+    // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
+    operatorController.leftTrigger(0.1)
+      .whileTrue(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem));
+
+    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
+    operatorController.rightTrigger(0.1)
+      .whileTrue(new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem));
+
+    // Operator Left Bumper: Auto Intake
+    operatorController.leftBumper()
+      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+
+
+
+
   
     // // Driver Modes
     // // Driver Start: Reset Gyro
@@ -182,23 +199,27 @@ public class RobotContainer {
     //   () -> -driverController.getRightX()
     // );
     // driverController.rightTrigger().whileTrue(intake);
-    // // Driver B: Auto aim robot for shot.
-    // AimingCommand aim = new AimingCommand(
-    //   m_arm,
-    //   m_dispenser,
-    //   swerveSubsystem,
-    //   m_autoaim,
-    //   m_positioning,
-    //   () -> -driverController.getLeftY(),
-    //   () -> -driverController.getLeftX(),
-    //   driverController.rightTrigger()
-    // );
-    // driverController.b().whileTrue(aim);
+    // Driver B: Auto aim robot for shot.
+    AimingCommand aim = new AimingCommand(
+      armSubsystem,
+      dispenserSubsystem,
+      swerveSubsystem,
+      m_autoaim,
+      m_positioning,
+      () -> -driverController.getLeftY(),
+      () -> -driverController.getLeftX(),
+      driverController.rightTrigger()
+    );
+    driverController.b().whileTrue(aim);
   }
 
   public void simulationPeriodic(double period) {
     Pose2d pose = swerveSubsystem.getPose();
     m_positioning.simulationPeriodic(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
+  }
+
+  public void periodic() {
+    m_positioning.update();
   }
 
   /**

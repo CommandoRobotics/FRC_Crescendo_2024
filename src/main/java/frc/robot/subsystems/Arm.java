@@ -62,8 +62,8 @@ public class Arm extends SubsystemBase {
     private final Rotation2d m_rightEncoderOffset = Rotation2d.fromRotations(ArmConstants.kRightArmEncoderOffsetInRotations);
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
 
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, 0, 0, 0);
-    private final PIDController m_armPID = new PIDController(12, 1e-4, 0.5); // TODO: Tune this PID
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, .33, 0, 0);
+    private final PIDController m_armPID = new PIDController(6, 1e-4, 0.5); // TODO: Tune this PID
     
     // Added two limit switches DI
     private DigitalInput m_upLimitSwitch;
@@ -89,6 +89,7 @@ public class Arm extends SubsystemBase {
     public Arm() {
         m_leftMotor = new CANSparkMax(31, MotorType.kBrushless);
         m_leftMotor.setIdleMode(IdleMode.kBrake);
+        m_leftMotor.setInverted(false); // THIS IS SUPPOSED TO BE FALSE just making sure it doesnt invert the motor by accident
         m_rightMotor = new CANSparkMax(32, MotorType.kBrushless);
         m_rightMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setInverted(true);
@@ -151,6 +152,16 @@ public class Arm extends SubsystemBase {
         return run(
             () -> {
                 setSourceIntake();
+                autoControl();
+            }
+        );       
+    }
+
+
+    public Command adjustTowardSubwooferCommand() {
+        return run(
+            () -> {
+                setSubwoofer();
                 autoControl();
             }
         );       
@@ -264,6 +275,10 @@ public class Arm extends SubsystemBase {
 
     public void setSourceIntake() {
         setAngleInDegrees(ArmConstants.kSourceAngle);
+    }
+
+    public void setSubwoofer() {
+        setAngleInDegrees(ArmConstants.kMaxSubwooferAngle);
     }
 
     public void setAmpAngle() {
@@ -386,7 +401,7 @@ public class Arm extends SubsystemBase {
         m_debuggingLastPIDOutput = pidOutput;
         double totalMotorOutput = feedForwardOutput + pidOutput;
         // Make sure we do not set the motors beyond what they can actually do.
-        totalMotorOutput = MathUtil.clamp(totalMotorOutput, -0.16, 0.3);
+        totalMotorOutput = MathUtil.clamp(totalMotorOutput, -0.5, 0.6);
         if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
             totalMotorOutput = 0;
         } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {

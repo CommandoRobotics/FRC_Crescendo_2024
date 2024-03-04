@@ -35,6 +35,7 @@ public class AimingCommand extends ParallelCommandGroup {
                 isBlueAlliance = false;
             }
         }
+        thePositioning.update();
         Pose2d currentPose = thePositioning.getPose();
 
         // Arm

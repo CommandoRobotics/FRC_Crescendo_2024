@@ -182,7 +182,7 @@ public class Positioning implements Sendable {
     // This function updates the Smart Dashboard with variables so we can debug.
     @Override
     public void initSendable(SendableBuilder builder) {
-        builder.setSmartDashboardType("AutoAim");
+        builder.setSmartDashboardType("Positioning");
         builder.addDoubleProperty("lastX", this::getX, null);
         builder.addDoubleProperty("lastY", this::getY, null);
         builder.addDoubleProperty("lastZ", this::dashboardGetZ, null);
