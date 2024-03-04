@@ -87,7 +87,7 @@ public class Positioning implements Sendable {
     public void update() {
         // Network tables associated with each Limelight
         NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight");
-        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limeligh-backup");
+        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limelight-backup");
 
         // Get whether the Limelights see valid data.
         final double default_value = -1; // This value is returned if the Limelight is not connected.
