@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
+import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AimAtSpeaker;
 import frc.robot.commands.AimingCommand;
 import frc.robot.commands.FeedingCommand;
@@ -96,6 +97,18 @@ public class RobotContainer {
     // Driver A: AutoAim Speaker
     driverController.a()
       .whileTrue(new AimAtSpeaker(armSubsystem, 
+                               dispenserSubsystem,
+                               swerveSubsystem,
+                               m_autoaim,
+                               m_positioning,
+                               () -> -driverController.getLeftY(),
+                               () -> -driverController.getLeftX(),
+                               driverController.rightTrigger()
+                               ));
+
+
+    driverController.b()
+      .whileTrue(new AimAtSource(armSubsystem, 
                                dispenserSubsystem,
                                swerveSubsystem,
                                m_autoaim,
@@ -213,7 +226,7 @@ public class RobotContainer {
     // );
     // driverController.rightTrigger().whileTrue(intake);
     // Driver B: Auto aim robot for shot.
-    AimingCommand aim = new AimingCommand(
+  /*   AimingCommand aim = new AimingCommand(
       armSubsystem,
       dispenserSubsystem,
       swerveSubsystem,
@@ -224,8 +237,9 @@ public class RobotContainer {
       driverController.rightTrigger()
     );
     driverController.b().whileTrue(aim);
+  
+*/
   }
-
   public void simulationPeriodic(double period) {
     Pose2d pose = swerveSubsystem.getPose();
     m_positioning.simulationPeriodic(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
