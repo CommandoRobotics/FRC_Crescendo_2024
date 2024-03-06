@@ -290,6 +290,16 @@ public class Dispenser extends SubsystemBase {
         
     }
 
+
+    public void spinUpShooterWheelsSlow() {
+        // Stop the intake (and force brake mode so a Note can't roll out).
+        m_intakeMotor.set(0);
+        m_intakeMotor.setIdleMode(IdleMode.kBrake);
+        uppershooterMotor.set(0.07);
+        lowershooterMotor.set(0.07);
+        
+    }
+
     // This function stops all the motors.
     // We'll use this function when have intaken Note, but are not ready to shoot it.
     public void stop() {

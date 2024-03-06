@@ -36,7 +36,7 @@ public class  AimAtSource extends ParallelCommandGroup {
             }
         }
         thePositioning.update();
-        Pose2d currentPose = thePositioning.getPose();
+        //Pose2d currentPose = thePositioning.getPose();
 
         // Arm
         // double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);

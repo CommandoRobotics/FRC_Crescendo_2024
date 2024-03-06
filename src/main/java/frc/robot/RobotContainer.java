@@ -62,6 +62,10 @@ public class RobotContainer {
     
     //Manual control of the arm - operator left stick Y
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
+
+
+    dispenserSubsystem.setDefaultCommand(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheelsSlow(), dispenserSubsystem));
+
     // Configure the trigger bindings
     configureBindings();
 
@@ -184,11 +188,11 @@ public class RobotContainer {
 
     // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
     operatorController.leftTrigger(0.1)
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem));
+      .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem));
 
     // Operator Right Trigger: Shoot (pushes note into shooter wheels)
     operatorController.rightTrigger(0.1)
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem));
+      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem));
 
     // Operator Left Bumper: Auto Intake
     operatorController.leftBumper()
