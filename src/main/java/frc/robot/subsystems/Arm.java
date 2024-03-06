@@ -61,10 +61,9 @@ public class Arm extends SubsystemBase {
     private final Rotation2d m_leftEncoderOffset = Rotation2d.fromRotations(ArmConstants.kLeftArmEncoderOffsetInRotations);
     private final Rotation2d m_rightEncoderOffset = Rotation2d.fromRotations(ArmConstants.kRightArmEncoderOffsetInRotations);
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
-
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, .33, 0, 0);
+    double armG = .33;
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, .33, 0, 0); //was .33
     private final PIDController m_armPID = new PIDController(6, 1e-4, 0.5); // TODO: Tune this PID
-    
     // Added two limit switches DI
     private DigitalInput m_upLimitSwitch;
     private DigitalInput m_downLimitSwitch;
@@ -87,6 +86,7 @@ public class Arm extends SubsystemBase {
 
     // Constructor
     public Arm() {
+
         m_leftMotor = new CANSparkMax(31, MotorType.kBrushless);
         m_leftMotor.setIdleMode(IdleMode.kBrake);
         m_leftMotor.setInverted(false); // THIS IS SUPPOSED TO BE FALSE just making sure it doesnt invert the motor by accident
@@ -98,6 +98,10 @@ public class Arm extends SubsystemBase {
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
         m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
+
+        m_leftMotor.setSmartCurrentLimit(40);
+        m_rightMotor.setSmartCurrentLimit(40);
+
         
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
@@ -389,6 +393,28 @@ public class Arm extends SubsystemBase {
     public boolean getUpLimitSwitchPressed() {
         boolean isLimitSwitchPressed = !m_upLimitSwitch.get();
         return isLimitSwitchPressed;
+    }
+
+    public double findActualArmKg(){ //TODO find all actual kg values
+        if (getCurrentArmPosition().getDegrees() <= 30) {
+        armG = Constants.ArmConstants.kSubwooferkG;
+        return armG;
+        } else if (getCurrentArmPosition().getDegrees() > 30 && getCurrentArmPosition().getDegrees() <= 40) {
+        armG = Constants.ArmConstants.kPodiumkG;
+        } else if (getCurrentArmPosition().getDegrees() > 40 && getCurrentArmPosition().getDegrees() <= 50) {
+        armG = Constants.ArmConstants.kWingkG;
+        } else if (getCurrentArmPosition().getDegrees() > 50 && getCurrentArmPosition().getDegrees() <= 60) {
+        armG = Constants.ArmConstants.kFiftySixtyRange;
+        } else if (getCurrentArmPosition().getDegrees() > 60 && getCurrentArmPosition().getDegrees() <= 70) {
+        armG = Constants.ArmConstants.kSixtySeventyRange;
+        } else if (getCurrentArmPosition().getDegrees() > 70 && getCurrentArmPosition().getDegrees() <= 80) {
+        armG = Constants.ArmConstants.kSeventyEightyRange;
+        } else if (getCurrentArmPosition().getDegrees() > 80 && getCurrentArmPosition().getDegrees() <= 90) {
+        armG = Constants.ArmConstants.kEightyNinetyRange;
+        } else {
+        armG = .33;
+        }
+        return armG;
     }
 
     // Call this every iteration to update the motor values.

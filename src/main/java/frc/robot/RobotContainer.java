@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.math.MathUtil;
@@ -18,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
+import frc.robot.commands.AimAtSpeaker;
 import frc.robot.commands.AimingCommand;
 import frc.robot.commands.FeedingCommand;
 import frc.robot.commands.IntakingCommand;
@@ -67,7 +69,7 @@ public class RobotContainer {
     SmartDashboard.putData(armSubsystem);
     SmartDashboard.putData(dispenserSubsystem);
     SmartDashboard.putData(m_positioning);
-    SmartDashboard.putData(m_autoaim);
+    SmartDashboard.putData(m_autoaim); 
 
 
   }
@@ -92,11 +94,22 @@ public class RobotContainer {
 
     //TODO actually do autoaim
     // Driver A: AutoAim Speaker
+    driverController.a()
+      .whileTrue(new AimAtSpeaker(armSubsystem, 
+                               dispenserSubsystem,
+                               swerveSubsystem,
+                               m_autoaim,
+                               m_positioning,
+                               () -> -driverController.getLeftY(),
+                               () -> -driverController.getLeftX(),
+                               driverController.rightTrigger()
+                               ));
 
     // Driver B: AutoAim Source
 
     // Driver Start: Reset gyro/field oriented
-    driverController.start().onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
+    driverController.start()
+      .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
 
 
     // Arm Controller

@@ -1,7 +1,10 @@
-package frc.robot;
+package frc.robot.API;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import frc.robot.Constants;
+import frc.robot.Constants.FieldElements;
+import frc.robot.Constants.FieldLines;
 
 // Handles calculations of robot/arm rotation when given current location.
 public class AutoAim implements Sendable {
@@ -60,14 +63,14 @@ public class AutoAim implements Sendable {
 
     // This function returns the correct direction to turn if the driver has the arm fully up.
     // When the arm is fully up, we are either intaking from the Source, or placing in the Amp.
-    // This automatically switches the rotation of the robot based on the closest of the two.
-    public double getDesiredYawInDegreesIfArmUp(double currentX, double currentY, boolean isBlueAlliance) {
-        if (isAmpCloser(currentX, currentY)) {
-            return getDesiredYawInDegreesToAmp(isBlueAlliance);
-        } else {
-            return getDesiredYawInDegreesToSource(isBlueAlliance);
+        // This automatically switches the rotation of the robot based on the closest of the two.
+        public double getDesiredYawInDegreesIfArmUp(double currentX, double currentY, boolean isBlueAlliance) {
+            if (isAmpCloser(currentX, currentY)) {
+                return getDesiredYawInDegreesToAmp(isBlueAlliance);
+            } else {
+                return getDesiredYawInDegreesToSource(isBlueAlliance);
+            }
         }
-    }
 
     // Returns the estimated shooter angle in degrees.
     public double getDesiredShooterAngleInDegrees(double currentX, double currentY, boolean isBlueAlliance){
@@ -153,8 +156,10 @@ public class AutoAim implements Sendable {
         } else {
             allowedArmErrorInDegrees = 0.1;
         }
+
         double desiredArmAngleInDegrees = getDesiredShooterAngleInDegrees(currentX, currentY, isBlueAlliance);
         double pitchError = Math.abs(desiredArmAngleInDegrees - armAngleInDegrees);
+        
         if (pitchError < allowedArmErrorInDegrees) {
             m_pitchAligned = true;
         } else {

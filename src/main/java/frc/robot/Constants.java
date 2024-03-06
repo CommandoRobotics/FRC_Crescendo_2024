@@ -39,6 +39,14 @@ public final class Constants {
     public static final double kArmDegreeOffset = -61.18;
     public static final double kArmRadianOffset = -1.069;
     public static final double kMaxSubwooferAngle = 30.0; //TODO tune this
+    public static final double kSubwooferAngle = 0;
+    public static final double kSubwooferkG = 0;
+    public static final double kPodiumkG = 0;
+    public static final double kWingkG = 0;
+    public static final double kFiftySixtyRange = 0;
+    public static final double kSixtySeventyRange = 0;
+    public static final double kSeventyEightyRange = 0;
+    public static final double kEightyNinetyRange = 0;
 
   }
 

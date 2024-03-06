@@ -14,7 +14,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.AutoAim;
+import frc.robot.API.AutoAim;
 import frc.robot.Constants.AutomationConstants;
 
 /**

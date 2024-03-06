@@ -16,8 +16,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.AutoAim;
 import frc.robot.Positioning;
+import frc.robot.API.AutoAim;
 
 public class FeedingCommand extends ParallelCommandGroup {    
     // This is the constructor, it stores references to the subsystems we will use.

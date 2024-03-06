@@ -85,6 +85,9 @@ public class Dispenser extends SubsystemBase {
         // would normally spit the Note out.
         m_intakeMotor.setInverted(false);
         uppershooterMotor.setInverted(false);
+        m_intakeMotor.setSmartCurrentLimit(40);
+        uppershooterMotor.setSmartCurrentLimit(40);
+        lowershooterMotor.setSmartCurrentLimit(40);
     }
 
     // Sets zero speed, but has motors hold position.

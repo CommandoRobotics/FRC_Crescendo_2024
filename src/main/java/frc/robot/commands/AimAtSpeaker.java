@@ -24,9 +24,9 @@ import frc.robot.subsystems.SwerveSubsystem;
 /*
  * Command for intake mode.
  */
-public class AimingCommand extends ParallelCommandGroup {
+public class  AimAtSpeaker extends ParallelCommandGroup {
 
-    public AimingCommand(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
+    public AimAtSpeaker(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
         // Determine which alliance we are, so we know where our own Speaker is.
         boolean isBlueAlliance = true;
         Optional<Alliance> ally = DriverStation.getAlliance();
@@ -39,17 +39,17 @@ public class AimingCommand extends ParallelCommandGroup {
         Pose2d currentPose = thePositioning.getPose();
 
         // Arm
-        double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        addCommands(theArm.setpointCommand(() -> desiredPitch));
+        // double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
+        // addCommands(theArm.setpointCommand(() -> desiredPitch));
 
-        // Dispenser
-        if (allowedToShoot.getAsBoolean()) {
-            // Go ahead and shoot
-            addCommands(theDispenser.shootUntilEmptyCommand());
-        } else {
-            // Hold the note (do not let it slide out).
-            addCommands(theDispenser.stopCommand());
-        }
+        // // Dispenser 
+        // if (allowedToShoot.getAsBoolean()) {
+        //     // Go ahead and shoot
+        //     addCommands(theDispenser.shootUntilEmptyCommand());
+        // } else {
+        //     // Hold the note (do not let it slide out).
+        //     addCommands(theDispenser.stopCommand());
+        // }
         
         // Chassis
         double desiredYawInDegrees = theAutoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
