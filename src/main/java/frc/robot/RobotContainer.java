@@ -7,11 +7,14 @@ package frc.robot;
 import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -19,11 +22,14 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
+import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AimAtSpeaker;
 import frc.robot.commands.AimingCommand;
 import frc.robot.commands.FeedingCommand;
 import frc.robot.commands.IntakingCommand;
+import frc.robot.commands.LeftAimAndShootAuto;
+import frc.robot.commands.TaxiCommand;
 
 public class RobotContainer {
 
@@ -37,6 +43,8 @@ public class RobotContainer {
   AutoAim m_autoaim = new AutoAim();
   Positioning m_positioning = new Positioning();
 
+  SendableChooser<Command> autoChooser = new SendableChooser<Command>();
+
   // Controllers
   private final CommandXboxController driverController = new CommandXboxController(OperatorConstants.kDriverControllerPort);
   private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
@@ -44,7 +52,12 @@ public class RobotContainer {
 
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-
+    
+    //Start the driver camera
+    CameraServer.startAutomaticCapture();
+    
+  
+    
     //Default Commands
 
     //Default drive using the driver controller (field oriented)
@@ -64,7 +77,7 @@ public class RobotContainer {
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
 
-    dispenserSubsystem.setDefaultCommand(new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheelsSlow(), dispenserSubsystem));
+    dispenserSubsystem.setDefaultCommand(new InstantCommand(() -> dispenserSubsystem.stopCommand(), dispenserSubsystem).repeatedly());
 
     // Configure the trigger bindings
     configureBindings();
@@ -75,6 +88,10 @@ public class RobotContainer {
     SmartDashboard.putData(dispenserSubsystem);
     SmartDashboard.putData(m_positioning);
     SmartDashboard.putData(m_autoaim); 
+    autoChooser.setDefaultOption("Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
+    autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    SmartDashboard.putData(autoChooser);
 
 
   }
@@ -87,10 +104,6 @@ public class RobotContainer {
     driverController.leftTrigger(0.1)
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
-
-
-    
-
 
     // Driver Right Trigger: Intake  // TODO change to autointake if beanbreak works
    // driverController.rightTrigger(0.1)
@@ -143,31 +156,65 @@ public class RobotContainer {
  */
 
     // Operator Y: Arm Up (using limit switch) //TODO might change to PID if we dont HAVE a limit switch
-    operatorController.y()
-      .whileTrue(Commands.run(() -> armSubsystem.setAngleInDegrees(90), armSubsystem))
-      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+        
+
+    //  operatorController.y()
+    //    .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0.7), armSubsystem))
+    //    .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+
+    
+     operatorController.y()
+       .whileTrue(Commands.run(() -> armSubsystem.setVoltageFromSD(), armSubsystem))
+       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+      // operatorController.povDown()
+      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
+      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+      // operatorController.povRight()
+      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
+      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+      // operatorController.povUp()
+      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
+      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+      // operatorController.povLeft()
+      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
+      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Up: Arm Up (using PID) //TODO find full arm up if theres no limit switch
     operatorController.povUp()
-      .whileTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(90), armSubsystem)
-                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(45), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
     operatorController.povDown()
-      .whileTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
-                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    // Operator Dpad Left: Go to Source height
+          // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
     operatorController.povLeft()
-      .whileTrue(armSubsystem.adjustTowardSourceCommand())
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(90), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+          // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
+    operatorController.povRight()
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(30), armSubsystem))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+
+    // // Operator Dpad Left: Go to Source height
+    // operatorController.povLeft()
+    //   .whileTrue(armSubsystem.adjustTowardSourceCommand())
+    //   .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Right: Go to Amp height
-    operatorController.povRight()
-      .whileTrue(armSubsystem.adjustTowardAmpCommand())
-      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+    // operatorController.povRight()
+    //   .whileTrue(armSubsystem.adjustTowardAmpCommand())
+    //   .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
           // Operator back: reset left encoder
     operatorController.back()
@@ -188,11 +235,14 @@ public class RobotContainer {
 
     // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
     operatorController.leftTrigger(0.1)
-      .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem));
+      .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
 
     // Operator Right Trigger: Shoot (pushes note into shooter wheels)
     operatorController.rightTrigger(0.1)
-      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem));
+      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
 
     // Operator Left Bumper: Auto Intake
     operatorController.leftBumper()
@@ -259,16 +309,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    double x = 0.5;
-    double y = 0.0;
-    double headingX = 0.0;
-    double headingY = 0.0;
-    //double rotateRate = 0.0;
-    return swerveSubsystem.driveCommand(
-      () -> x,
-      () -> y,
-      () -> headingX,
-      () -> headingY
-    );
+    return autoChooser.getSelected();
   }
 }

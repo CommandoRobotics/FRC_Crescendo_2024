@@ -7,12 +7,15 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot.subsystems;
 
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.math.MathUtil;
 // The imports include classes from various code libraries.
 // They contain prewritten code we can use to make our job easier.
@@ -28,13 +31,17 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.units.Units;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -62,15 +69,15 @@ public class Arm extends SubsystemBase {
     private final Rotation2d m_rightEncoderOffset = Rotation2d.fromRotations(ArmConstants.kRightArmEncoderOffsetInRotations);
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
     double armG = .33;
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0, .33, 0, 0); //was .33
-    private final PIDController m_armPID = new PIDController(6, 1e-4, 0.5); // TODO: Tune this PID
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, .75, .3, 0.0); //was .33
+    private final PIDController m_armPID = new PIDController(11, 0, .8); // TODO: Tune this PID
     // Added two limit switches DI
     private DigitalInput m_upLimitSwitch;
     private DigitalInput m_downLimitSwitch;
     // The following is just for simulation and debugging
     private SingleJointedArmSim m_simulatedArm;
     private final double armLengthInMeters = 0.77; // Updated with correct length.
-    private final double armMassInKilograms = 20.0; // TDOD: Update this with correct mass.
+    private final double armMassInKilograms = 10.0; // TDOD: Update this with correct mass.
     private final double armReduction = 5 * 4 * 2 * 3; // Max planetary 5:1, 4:1, 2:1 and a 3:1 chain reduction.
     private final Rotation2d minPosition = Rotation2d.fromDegrees(ArmConstants.kMinimumAllowedAngle);
     private final Rotation2d maxPosition = Rotation2d.fromDegrees(ArmConstants.kMaximumAllowedAngle);
@@ -83,6 +90,7 @@ public class Arm extends SubsystemBase {
     private boolean m_detectedRightEncoderBad;
     private MechanismLigament2d m_supportLigament;
     private MechanismLigament2d m_armLigament;
+
 
     // Constructor
     public Arm() {
@@ -98,11 +106,14 @@ public class Arm extends SubsystemBase {
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
         m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
-
+        SmartDashboard.putNumber(("Arm Voltage"), 0);
+            //SysIdRoutine routine = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(voltage, motorLog, armSubsystem, getName()));
+       //Consumer<Measure<Voltage>> leftArmNeo = Consumer<Measure<Voltage>>.accept();
+         
         m_leftMotor.setSmartCurrentLimit(40);
         m_rightMotor.setSmartCurrentLimit(40);
 
-        
+  
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
             armReduction,
@@ -136,6 +147,17 @@ public class Arm extends SubsystemBase {
         return run(() -> release());
     }
 
+  public void setVoltage(double voltage){
+        m_leftMotor.setVoltage(voltage);
+        m_rightMotor.setVoltage(voltage);
+  }
+
+  public void setVoltageFromSD() {
+    m_leftMotor.setVoltage(SmartDashboard.getNumber(("Arm Voltage"), 0));
+    m_rightMotor.setVoltage(SmartDashboard.getNumber(("Arm Voltage"), 0));
+  }
+
+
     // Command that puts motors in brake mode (not necesarily hold position).
     public Command stopCommand() {
         return run(() -> stop());
@@ -161,7 +183,7 @@ public class Arm extends SubsystemBase {
         );       
     }
 
-
+    
     public Command adjustTowardSubwooferCommand() {
         return run(
             () -> {
@@ -219,6 +241,7 @@ public class Arm extends SubsystemBase {
         m_leftMotor.stopMotor();
         m_rightMotor.stopMotor();
     }
+
 
     // Sets the motors to brake mode and stop them.
     public void stop() {
@@ -440,6 +463,29 @@ public class Arm extends SubsystemBase {
         return true;
     }
 
+    public boolean setArmSetpoint(double newSetpoint) {
+        Rotation2d newSetpoint2d = Rotation2d.fromDegrees(newSetpoint);
+        double feedForwardOutput = m_armFeedFoward.calculate(newSetpoint2d.getRadians(), 1.0);
+        m_debbugingLastFeedForwardOutput = feedForwardOutput;
+        double pidOutput = m_armPID.calculate(getCurrentArmPosition().getRadians(), newSetpoint2d.getRadians() );
+        m_debuggingLastPIDOutput = pidOutput;
+
+        double totalMotorOutput = feedForwardOutput + pidOutput;
+        // Make sure we do not set the motors beyond what they can actually do.
+        //totalMotorOutput = MathUtil.clamp(totalMotorOutput, -0.5, 0.6);
+        // if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
+        //     totalMotorOutput = 0;
+        // } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
+        //     totalMotorOutput = 0;
+        // }
+        m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
+        setVoltage(totalMotorOutput);
+        SmartDashboard.putNumber("arm pid output", pidOutput);
+        SmartDashboard.putNumber("arm ff output", feedForwardOutput);
+        SmartDashboard.putNumber("arm combined output", totalMotorOutput);
+        return true;
+    }
+
     // Returns an angle that corresponds to the percentage within the range.
     // For example if the range is 0 to 1, and the value is 0.5, the degrees will be 45 (halfway beteen 0 and 90).
     double toAngleFromRange(double rangeMin, double rangeMax, double value) {
@@ -453,6 +499,12 @@ public class Arm extends SubsystemBase {
     public void periodic() {
         // The arm is perpendicular to the Upright shoulder.
         m_armLigament.setAngle(getCurrentArmPosition().getDegrees() - 90);
+        SmartDashboard.putNumber("arm angle in degrees", getCurrentArmPosition().getDegrees());
+        
+
+
+
+
     }
 
     // This is called once per scheduler run, but only during simulation.
@@ -500,7 +552,7 @@ public class Arm extends SubsystemBase {
 
 
     double dashboardGetArmVoltage() {
-        return m_leftMotor.get() * 12;
+       return m_leftMotor.get() * 12;
         //return m_leftMotor.get() * RobotController.getBatteryVoltage();
     }
 

@@ -12,6 +12,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -217,9 +218,7 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(speed);
         uppershooterMotor.set(0);
         lowershooterMotor.set(0);
-        // Set the shooter motors to brake so they do not spin down and allow the Note to exit.
-        uppershooterMotor.setIdleMode(IdleMode.kBrake);
-        lowershooterMotor.setIdleMode(IdleMode.kBrake);
+
     }
 
     // This function runs the intake motors until a Note is stored in our index area.
@@ -308,8 +307,7 @@ public class Dispenser extends SubsystemBase {
         lowershooterMotor.set(0);
         // Ensure motors do not roll out on their own.
         m_intakeMotor.setIdleMode(IdleMode.kBrake);
-        uppershooterMotor.setIdleMode(IdleMode.kBrake);
-        lowershooterMotor.setIdleMode(IdleMode.kBrake);
+
         
     }
 
@@ -326,6 +324,16 @@ public class Dispenser extends SubsystemBase {
     }
 
     // The following sends information about this subsystem to the Smart Dashboard.
+
+
+    @Override
+    public void periodic() {
+        // The arm is perpendicular to the Upright shoulder.
+        SmartDashboard.putBoolean("intake detects note", intakeDetectsNote());
+        SmartDashboard.putBoolean("indexer detects note", indexerDetectsNote());
+        SmartDashboard.putBoolean("shooter detects note", shooterDetectsNote());
+
+    }
     @Override
     public void initSendable(SendableBuilder builder) {
         super.initSendable(builder);

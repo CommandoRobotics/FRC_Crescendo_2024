@@ -73,6 +73,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Command to drive the robot using translative values and heading as angular velocity.
+   * 
+   * Note: Is relative to the field
    *
    * @param translationX     Translation in the X direction.
    * @param translationY     Translation in the Y direction.
@@ -163,6 +165,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void resetGyro() {
     swerveDrive.setGyro(new Rotation3d(0, 0, 0));
+  }
+
+  public void setGyro(double gyroSetpoint){
+    swerveDrive.setGyro(new Rotation3d(0, 0, new Rotation2d(gyroSetpoint).getRadians()));
   }
 
   @Override
