@@ -77,7 +77,7 @@ public class RobotContainer {
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
 
-    dispenserSubsystem.setDefaultCommand(new InstantCommand(() -> dispenserSubsystem.stopCommand(), dispenserSubsystem).repeatedly());
+    dispenserSubsystem.setDefaultCommand(dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()));
 
     // Configure the trigger bindings
     configureBindings();
@@ -101,7 +101,7 @@ public class RobotContainer {
     //Driver Controller
 
     // Driver Left Trigger: Outake
-    driverController.leftTrigger(0.1)
+    driverController.rightBumper()
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
@@ -141,82 +141,55 @@ public class RobotContainer {
     driverController.start()
       .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
 
+    //driver intake
+    driverController.leftBumper()
+      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+
+
 
     // Arm Controller
 
-    // Operator A: Arm Flat (using limit switch
+
+
+    // Operator A: Arm Flat 
 
     operatorController.a()
       .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
                   .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    /*operatorController.leftBumper()
-      .whileTrue(armSubsystem.adjustTowardSubwooferCommand());
- */
-
-    // Operator Y: Arm Up (using limit switch) //TODO might change to PID if we dont HAVE a limit switch
-
-        
-
-    //  operatorController.y()
-    //    .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0.7), armSubsystem))
-    //    .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
 
-    
+      // Operator Y: Lock arm in place //TODO might change to PID if we dont HAVE a limit switch
      operatorController.y()
-       .whileTrue(Commands.run(() -> armSubsystem.setVoltageFromSD(), armSubsystem))
+       .whileTrue(Commands.run(() -> armSubsystem.setVoltage(.7), armSubsystem))
        .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-      // operatorController.povDown()
-      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
-      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-      // operatorController.povRight()
-      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
-      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-      // operatorController.povUp()
-      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
-      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-      // operatorController.povLeft()
-      //  .whileTrue(Commands.run(() -> armSubsystem.setVoltage(0), armSubsystem))
-      //  .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Up: Arm Up (using PID) //TODO find full arm up if theres no limit switch
     operatorController.povUp()
       .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(45), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
+    // Operator Dpad Down: Arm shoot from subwoofer (using PID) //TODO Could just use limit switch
     operatorController.povDown()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSubwooferAngle), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
           // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
     operatorController.povLeft()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(90), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kAmpAngle), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
           // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
     operatorController.povRight()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(30), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSourceAngle), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
 
-    // // Operator Dpad Left: Go to Source height
-    // operatorController.povLeft()
-    //   .whileTrue(armSubsystem.adjustTowardSourceCommand())
-    //   .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
-    // Operator Dpad Right: Go to Amp height
-    // operatorController.povRight()
-    //   .whileTrue(armSubsystem.adjustTowardAmpCommand())
-    //   .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-          // Operator back: reset left encoder
+      // Operator back: reset left encoder
     operatorController.back()
       .onTrue(Commands.runOnce(() -> armSubsystem.resetLeftEncoder(), armSubsystem));
 
@@ -249,6 +222,9 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
+
+    
+    
 
 
 

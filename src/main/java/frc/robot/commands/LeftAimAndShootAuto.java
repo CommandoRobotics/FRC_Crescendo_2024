@@ -7,6 +7,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.Constants;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
 import frc.robot.subsystems.Arm;
@@ -22,35 +23,24 @@ public class LeftAimAndShootAuto extends SequentialCommandGroup {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
-        new InstantCommand(() -> swerveSubsystem.setGyro(62.06)),
-      //62.06                      27.94
-        //aims yaw of robot towards speaker
-        new AimAtSpeaker(
-        armSubsystem, 
-        dispenserSubsystem,
-        swerveSubsystem,
-        autoAim,
-        positioning,
-        () -> -.3,
-        () -> -.3,
-        () -> true).repeatedly().withTimeout(5),
+
 
         //lowers arm
-        new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-.3), armSubsystem).repeatedly().withTimeout(2),
+        new InstantCommand(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSubwooferAngle), armSubsystem).repeatedly().withTimeout(4),
 
-        //revs up shooter
+        //revs up shooter and shoots
         new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem).repeatedly().withTimeout(1),
         new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(4),
 
         //stops shooter and puts arm down
         new ParallelCommandGroup(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem), 
-                                 new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(.3), armSubsystem) )
-                                 .repeatedly().withTimeout(2),
+                                 new InstantCommand(() -> armSubsystem.setArmSetpoint(0), armSubsystem) )
+                                 .repeatedly().withTimeout(3),
 
-        //Drives for 1 second
+        //Drives for 7.5 seconds
         swerveSubsystem.driveCommand(() -> 0.3,
         ()-> 0,
-        ()-> 0).repeatedly().withTimeout(3.5),
+        ()-> 0).repeatedly().withTimeout(7.5),
 
         //Stop the drive
         swerveSubsystem.driveCommand(() -> 0,
