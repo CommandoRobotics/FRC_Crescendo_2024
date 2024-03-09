@@ -29,6 +29,8 @@ import frc.robot.commands.AimingCommand;
 import frc.robot.commands.FeedingCommand;
 import frc.robot.commands.IntakingCommand;
 import frc.robot.commands.LeftAimAndShootAuto;
+import frc.robot.commands.RightAimAndShootAuto;
+import frc.robot.commands.ScoreThenTaxi;
 import frc.robot.commands.TaxiCommand;
 
 public class RobotContainer {
@@ -88,10 +90,13 @@ public class RobotContainer {
     SmartDashboard.putData(dispenserSubsystem);
     SmartDashboard.putData(m_positioning);
     SmartDashboard.putData(m_autoaim); 
-    autoChooser.setDefaultOption("Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    SmartDashboard.putData(autoChooser);
+    autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("shoot then back up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+
+    SmartDashboard.putData(autoChooser);  
 
 
   }
@@ -104,6 +109,11 @@ public class RobotContainer {
     driverController.rightBumper()
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
+
+
+    // Driver Left Trigger: Outake
+    // driverController.y()
+    //   .whileTrue(new InstantCommand(() -> swerveSubsystem.setGyro(-62.07), swerveSubsystem));
 
     // Driver Right Trigger: Intake  // TODO change to autointake if beanbreak works
    // driverController.rightTrigger(0.1)
@@ -135,6 +145,8 @@ public class RobotContainer {
                                driverController.rightTrigger()
                                ));
 
+                               
+
     // Driver B: AutoAim Source
 
     // Driver Start: Reset gyro/field oriented
@@ -152,11 +164,16 @@ public class RobotContainer {
     // Arm Controller
 
 
-
     // Operator A: Arm Flat 
 
-    operatorController.a()
+
+    operatorController.x()
       .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
+                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    operatorController.a()
+      .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(10), armSubsystem)
                   .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
@@ -169,7 +186,7 @@ public class RobotContainer {
 
     // Operator Dpad Up: Arm Up (using PID) //TODO find full arm up if theres no limit switch
     operatorController.povUp()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(45), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(40), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Down: Arm shoot from subwoofer (using PID) //TODO Could just use limit switch
@@ -184,7 +201,7 @@ public class RobotContainer {
 
           // Operator Dpad Down: Arm Down (using PID) //TODO Could just use limit switch
     operatorController.povRight()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSourceAngle), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(20), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
 

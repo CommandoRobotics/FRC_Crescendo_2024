@@ -45,6 +45,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     //Enable HIGH Telemetry
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
+    SmartDashboard.putData(" field", swerveDrive.field);
   }
 
   /**
@@ -150,6 +151,13 @@ public class SwerveSubsystem extends SubsystemBase {
             new Config(),
             this, swerveDrive),
         3.0, 5.0, 3.0);
+  }
+
+  /**
+   * Returns the distance the swerve has driven in inches
+   */
+  public double getDistance() {
+    return Units.metersToInches(swerveDrive.getModules()[0].getDriveMotor().getPosition());
   }
 
   //TODO More methods needed to help control the swerve drive.

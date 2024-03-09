@@ -17,9 +17,9 @@ import frc.robot.subsystems.SwerveSubsystem;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class AimAndShootCommand extends SequentialCommandGroup {
+public class ScoreThenTaxi extends SequentialCommandGroup {
   /** Creates a new AimAndShootCommand. */
-  public AimAndShootCommand(Arm armSubsystem, Dispenser dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
+  public ScoreThenTaxi(Arm armSubsystem, Dispenser dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
     // Add your commands in the addCommands() call, e.g.
     // addCommands(new FooCommand(), new BarCommand());
     addCommands(
@@ -42,37 +42,18 @@ public class AimAndShootCommand extends SequentialCommandGroup {
                                  .repeatedly().withTimeout(3),
         
 
-        
+        //intakes and drives backwards //TODO find actual distance
 
-
-        // drives backwards and intakes //TODO find actual distance
-        new DriveDisCommand(-60, swerveSubsystem).alongWith(new InstantCommand(() -> dispenserSubsystem.autoIntake(),dispenserSubsystem ))
-        .raceWith(swerveSubsystem.driveCommand(() -> 0.3, ()-> 0, ()-> 0, false).repeatedly()),
+        swerveSubsystem.driveCommand(() -> 0.3, ()-> 0, ()-> 0, false).withTimeout(5),
         
         //Stop the drive
         swerveSubsystem.driveCommand(
           () -> 0,
           ()-> 0,
-          ()-> 0).repeatedly().withTimeout(30),
-
-                
-        // drives forward and stops intake //TODO find actual distance
-        new DriveDisCommand(60, swerveSubsystem).alongWith(new InstantCommand(() -> dispenserSubsystem.stop(),dispenserSubsystem ))
-        .raceWith(swerveSubsystem.driveCommand(() -> -0.3, ()-> 0, ()-> 0, false).repeatedly()),
+          ()-> 0).repeatedly().withTimeout(30)
 
 
-        //Stop the drive
-        swerveSubsystem.driveCommand(
-          () -> 0,
-          ()-> 0,
-          ()-> 0).repeatedly().withTimeout(1),
 
-        //revs up shooter and raises arm
-        new ParallelCommandGroup(new InstantCommand(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSubwooferAngle-5), armSubsystem).repeatedly().withTimeout(2),
-                                 new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem).repeatedly().withTimeout(1)),
-
-        //shoots
-        new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(4)
     );
   }
 }
