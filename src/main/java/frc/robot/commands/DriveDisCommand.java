@@ -30,10 +30,10 @@ public class DriveDisCommand extends Command {
 
     if (distance > 0) {
       isForwards = true;
-      targetDis = startingDis + distance;
+      targetDis = startingDis + Math.abs(distance);
     } else {
       isForwards = false;
-      targetDis = startingDis - distance;
+      targetDis = startingDis - Math.abs(distance);
     }
 
     

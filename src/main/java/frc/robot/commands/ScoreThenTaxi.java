@@ -30,16 +30,23 @@ public class ScoreThenTaxi extends SequentialCommandGroup {
         
         //revs up shooter and raises arm
         new ParallelCommandGroup(new InstantCommand(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kSubwooferAngle-5), armSubsystem).repeatedly().withTimeout(2),
-                                 new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem).repeatedly().withTimeout(1)
+                                 new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem).repeatedly().withTimeout(2)
                                  ),
 
         //shoots
-        new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(4),
+        new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(3),
        
         //stops shooter and puts arm down
         new ParallelCommandGroup(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem), 
                                  new InstantCommand(() -> armSubsystem.setArmSetpoint(0), armSubsystem) )
                                  .repeatedly().withTimeout(3),
+
+
+                                        //Stop the drive
+        swerveSubsystem.driveCommand(
+          () -> 0,
+          ()-> 0,
+          ()-> 0).repeatedly().withTimeout(5),
         
 
         //intakes and drives backwards //TODO find actual distance
@@ -50,7 +57,7 @@ public class ScoreThenTaxi extends SequentialCommandGroup {
         swerveSubsystem.driveCommand(
           () -> 0,
           ()-> 0,
-          ()-> 0).repeatedly().withTimeout(30)
+          ()-> 0).repeatedly().withTimeout(12)
 
 
 

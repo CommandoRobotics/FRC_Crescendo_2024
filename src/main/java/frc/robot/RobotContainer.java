@@ -94,7 +94,7 @@ public class RobotContainer {
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("shoot then back up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Shoots then backs up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
 
     SmartDashboard.putData(autoChooser);  
 
