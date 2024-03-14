@@ -52,6 +52,7 @@ import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkLimitSwitch;
 
 import frc.robot.Constants;
+import frc.robot.Positioning;
 import frc.robot.Constants.ArmConstants;
 
 
@@ -494,7 +495,7 @@ public class Arm extends SubsystemBase {
         double degrees = percentage * armRange + ArmConstants.kMinimumAllowedAngle;
         return degrees;
     }
-
+    Positioning positioningData;
     @Override
     public void periodic() {
         // The arm is perpendicular to the Upright shoulder.
@@ -521,6 +522,8 @@ public class Arm extends SubsystemBase {
             )
         );
 
+
+
     }
 
     @Override
@@ -539,6 +542,11 @@ public class Arm extends SubsystemBase {
       builder.addBooleanProperty("rightGood", this::dashboardGetRightArmGood, null);
       builder.addBooleanProperty("hitTopLimit", this::getUpLimitSwitchPressed, null);
       builder.addBooleanProperty("hitBottomLimit", this::getDownLimitSwitchPressed, null);
+          // This function updates the Smart Dashboard with variables so we can debug.
+
+
+    
+
     }
 
     double dashboardGetDesiredtArmPositionInDegrees() {

@@ -6,12 +6,13 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 // Provides the position of the robot using Limelight/AprilTags.
 // Positions are provided relative to the WPI Blue Origin.
 // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
-public class Positioning implements Sendable {
+public class Positioning  extends SubsystemBase {//implements Sendable  {
     
     // The following store the "tv" value. This indicates if Limelight sees a target.
     // A value of 1 means it sees a target, whereas 0 means it does not.
