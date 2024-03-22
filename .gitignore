@@ -183,6 +183,3 @@ ctre_sim/
 
 # Glass tool directory
 .Glass/
-
-# Build constants for versioning in AdvantageKit
-src/main/java/frc/robot/BuildConstants.java
