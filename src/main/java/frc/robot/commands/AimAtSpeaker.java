@@ -54,6 +54,7 @@ public class  AimAtSpeaker extends ParallelCommandGroup {
         // Chassis
         double desiredYawInDegrees = theAutoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
         // YAGSL uses the X component and Y component of an angle to set the desired angle.
+        System.out.println("Desired Yaw is " + desiredYawInDegrees + " degrees.");
         Rotation2d desiredHeading = Rotation2d.fromDegrees(desiredYawInDegrees);
         double headingX = desiredHeading.getSin();
         double headingY = desiredHeading.getCos();

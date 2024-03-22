@@ -13,6 +13,8 @@ public class AutoAim implements Sendable {
     //10.58.89.12
     // Returns the yaw to turn to based on current position.
     // Inputs are based on the WPILib Blue coordinate system.
+
+
     public double getDesiredYawInDegreesToSpeaker(double currentX, double currentY, boolean isBlueAlliance) {
         // Set blue by default
         double targetX = Constants.FieldElements.kBlueSpeakerX;
@@ -28,6 +30,7 @@ public class AutoAim implements Sendable {
 
         double desiredYaw = Math.atan(deltaY/deltaX);
         return desiredYaw;
+
     }
 
     // This function determines what angle we should turn to if we want to "shoot" into the Amp.

@@ -68,8 +68,8 @@ public class Dispenser extends SubsystemBase {
         // Set the motors to the appropriate CAN device ID and set the type (brushed or brushless).
     
         m_intakeMotor = new CANSparkMax(41, MotorType.kBrushless);
-        uppershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
-        lowershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+        uppershooterMotor = new CANSparkMax(53, MotorType.kBrushless);
+        lowershooterMotor = new CANSparkMax(51, MotorType.kBrushless);
 
         m_intakeBeamBreak = new DigitalInput(DispenserConstants.kRioDIOPortIntakeBeamBreak);
         m_indexerBeamBreak = new DigitalInput(DispenserConstants.kRioDIOPortIndexerBeamBreak);
