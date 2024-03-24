@@ -52,7 +52,7 @@ public class AimingCommand extends ParallelCommandGroup {
         }
         
         // Chassis
-        double desiredYawInDegrees = theAutoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
+        double desiredYawInDegrees = theAutoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), currentPose.getRotation(), theSwerve.getYaw(), isBlueAlliance);
         // YAGSL uses the X component and Y component of an angle to set the desired angle.
         Rotation2d desiredHeading = Rotation2d.fromDegrees(desiredYawInDegrees);
         double headingX = desiredHeading.getSin();

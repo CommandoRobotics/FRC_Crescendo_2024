@@ -46,6 +46,8 @@ public class SwerveSubsystem extends SubsystemBase {
     //Enable HIGH Telemetry
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     SmartDashboard.putData(" field", swerveDrive.field);
+    SmartDashboard.putNumber("Yaw Setpoint", 0);
+
   }
 
   /**
@@ -70,6 +72,19 @@ public class SwerveSubsystem extends SubsystemBase {
                                                                       swerveDrive.getYaw().getRadians(),
                                                                       swerveDrive.getMaximumVelocity()));
     });
+  } 
+
+  public void drive(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
+                              DoubleSupplier headingY) 
+  {
+      double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth controll out
+      double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth controll out
+      // Make the robot move
+      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(xInput, yInput,
+                                                                      headingX.getAsDouble(),
+                                                                      headingY.getAsDouble(),
+                                                                      swerveDrive.getYaw().getRadians(),
+                                                                      swerveDrive.getMaximumVelocity()));
   } 
 
   /**
@@ -179,9 +194,19 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.setGyro(new Rotation3d(0, 0, new Rotation2d(gyroSetpoint).getRadians()));
   }
 
+  public Rotation2d getYaw() {
+    return Rotation2d.fromRadians(swerveDrive.getGyro().getRotation3d().getZ());
+  }
+
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     SmartDashboard.putNumber("Swerve Distance", swerveDrive.getModules()[0].getDriveMotor().getPosition());
+
   }
+
+
+  
+
 }

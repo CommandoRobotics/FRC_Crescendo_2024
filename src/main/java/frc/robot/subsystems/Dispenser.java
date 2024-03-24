@@ -158,7 +158,6 @@ public class Dispenser extends SubsystemBase {
      */
     public void setDispenser(double speed) {
         // Only allow positive speeds, from 0 to 1 (full power).
-        speed = MathUtil.clamp(speed, 0, 1.0);
         m_intakeMotor.set(speed);
         lowershooterMotor.set(speed);
         uppershooterMotor.set(speed);

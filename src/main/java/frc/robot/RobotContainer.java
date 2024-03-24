@@ -26,9 +26,12 @@ import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AimAtSpeaker;
 import frc.robot.commands.AimingCommand;
+import frc.robot.commands.AlignToSpeaker;
 import frc.robot.commands.FeedingCommand;
+import frc.robot.commands.GoToYawSetpoint;
 import frc.robot.commands.IntakingCommand;
 import frc.robot.commands.LeftAimAndShootAuto;
+import frc.robot.commands.RadiallyGoToAngle;
 import frc.robot.commands.RightAimAndShootAuto;
 import frc.robot.commands.ScoreThenTaxi;
 import frc.robot.commands.TaxiCommand;
@@ -88,8 +91,8 @@ public class RobotContainer {
 
     SmartDashboard.putData(armSubsystem);
     SmartDashboard.putData(dispenserSubsystem);
-    SmartDashboard.putData(m_positioning);
-    SmartDashboard.putData(m_autoaim); 
+    SmartDashboard.putData("Positioning", m_positioning);
+    SmartDashboard.putData("AutoAim", m_autoaim); 
     autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
@@ -121,17 +124,15 @@ public class RobotContainer {
     //  .onFalse(dispenserSubsystem.stopCommand());
 
     //TODO actually do autoaim
-    // Driver A: AutoAim Speaker
+
     driverController.a()
-      .whileTrue(new AimAtSpeaker(armSubsystem, 
-                               dispenserSubsystem,
-                               swerveSubsystem,
-                               m_autoaim,
-                               m_positioning,
+      .whileTrue(new AlignToSpeaker(33,
                                () -> -driverController.getLeftY(),
                                () -> -driverController.getLeftX(),
-                               driverController.rightTrigger()
-                               ));
+                               m_positioning,
+                               m_autoaim,
+                               swerveSubsystem
+                              ));
 
 
     driverController.b()
@@ -153,10 +154,21 @@ public class RobotContainer {
     driverController.start()
       .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
 
+    
+
     //driver intake
     driverController.leftBumper()
       .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
+
+
+    // Driver back: go to setpoint
+    driverController.back()
+      .whileTrue(new RadiallyGoToAngle(33,
+                               () -> -driverController.getLeftY(),
+                               () -> -driverController.getLeftX(),
+                                swerveSubsystem
+                               ));
 
 
 

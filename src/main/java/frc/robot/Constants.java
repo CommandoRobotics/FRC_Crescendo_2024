@@ -54,8 +54,8 @@ public final class Constants {
     public static final double kAmpDispenseSpeed = 0.5; // TODO: Tune this. As fast as possible with chance of bouncing out.
     public static final double kFloorIntakeSpeed = 0.5; // TODO: Tune this. As fast as possible without slipping.
     public static final double kSourceIntakeSpeed = 1.0; // TODO: Tune this. As fast as possible without slipping.
-    public static final double kShooterIdleSpeed = 1; // TODO: Tune this. As slow as possible, without affecting shots.
-    public static final double kShooterSubwooferSpeed = 1; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final double kShooterIdleSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
+    public static final double kShooterSubwooferSpeed = 1.0; // TODO: Tune this. As slow as possible, without affecting shots.
 
     public static final int kRioDIOPortIntakeBeamBreak = 6;
     public static final int kRioDIOPortIndexerBeamBreak = 7;
@@ -65,9 +65,9 @@ public final class Constants {
   // All the following are in meters using WPI Lib Blue as the Origin
   public class FieldElements {
     // Speaker
-    public static final double kBlueSpeakerX = 0.0;
+    public static final double kBlueSpeakerX = -0.038;
     public static final double kBlueSpeakerY = 5.55;
-    public static final double kRedSpeakerX = 16.52;
+    public static final double kRedSpeakerX = 16.58;
     public static final double kRedSpeakerY = 5.55;
     public static final double kSpeakerHeight = 2.0; // Point where we are going to aim for.
     // Amp - Center of opening
@@ -95,9 +95,9 @@ public final class Constants {
   }
 
   // Limelight Positions
-  public static final double kLimelight1MetersAboveField = 1.0; // TODO: Tune this. Distance above field to center of camera lens (meters).
-  public static final double kLimelight1MetersFromRobotCenterX = 0.1; // TODO: Tune this. Left of center is positive.
-  public static final double kLimelight1MetersFromRobotCenterY = 0.1; // TODO: Tune this. Toward front of center is positve.
+  public static final double kLimelight1MetersAboveField = .4318; // 17.25 inches
+  public static final double kLimelight1MetersFromRobotCenterX = 0.28; // 11 inches
+  public static final double kLimelight1MetersFromRobotCenterY = 0.0; // TODO: Tune this. Toward front of center is positve.
   public static final double kLimelight1RotationInDegrees = 0.0; // TODO: Tune this. Rotation is COUNTER-clockwise from center of robot.
   public static final Pose2d kLimelight1Pose = new Pose2d(
     Constants.kLimelight1MetersFromRobotCenterX,

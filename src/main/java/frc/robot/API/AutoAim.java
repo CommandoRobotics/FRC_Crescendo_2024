@@ -1,7 +1,9 @@
 package frc.robot.API;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Constants.FieldElements;
 import frc.robot.Constants.FieldLines;
@@ -10,12 +12,17 @@ import frc.robot.Constants.FieldLines;
 public class AutoAim implements Sendable {
     boolean m_yawAligned = false; // Stores whether the last calculation deterimened yaw was good enough to shoot.
     boolean m_pitchAligned = false; // Stores whether the last calculation deterimened arm was good enough to shoot.
-    //10.58.89.12
+
+    double m_debugDeltaX; // For debugging only: X Distance from center of robot to target.
+    double m_debugDeltaY; // For debugging only: Y Distance from center of robot to target.
+    double m_debugTargetYawInDegrees; // For debugging only: Y Distance from center of robot to target.
+    double m_debugErrorYawInDegrees; // For debugging only: Y Distance from center of robot to target.
+    double m_debugDesiredYawInDegrees; // For debugging only: Y Distance from center of robot to target.
+    //10.58.89.1
     // Returns the yaw to turn to based on current position.
     // Inputs are based on the WPILib Blue coordinate system.
 
-
-    public double getDesiredYawInDegreesToSpeaker(double currentX, double currentY, boolean isBlueAlliance) {
+    public double getDesiredYawInDegreesToSpeaker(double currentX, double currentY, Rotation2d currentLimelightYaw, Rotation2d currentGyroYaw, boolean isBlueAlliance) {
         // Set blue by default
         double targetX = Constants.FieldElements.kBlueSpeakerX;
         double targetY = Constants.FieldElements.kBlueSpeakerY;
@@ -27,9 +34,16 @@ public class AutoAim implements Sendable {
         // Note: This may result in a negative value (meaning opposite direction).
         double deltaX = targetX - currentX;
         double deltaY = targetY - currentY;
+        m_debugDeltaX = deltaX;
+        m_debugDeltaY = deltaY;
 
-        double desiredYaw = Math.atan(deltaY/deltaX);
-        return desiredYaw;
+        Rotation2d targetYaw = Rotation2d.fromRadians(Math.atan(deltaY/deltaX));
+        m_debugTargetYawInDegrees = targetYaw.getDegrees();
+        Rotation2d yawError = currentGyroYaw.minus(currentLimelightYaw);
+        m_debugErrorYawInDegrees = yawError.getDegrees();
+        Rotation2d desiredYaw = targetYaw.plus(yawError);
+        m_debugDesiredYawInDegrees = desiredYaw.getDegrees();
+        return desiredYaw.getDegrees();
 
     }
 
@@ -122,7 +136,7 @@ public class AutoAim implements Sendable {
     // y: Y coordinates in Blue origin field.
     // yawInDegres: Robot's current yaw.
     // armAngleInDegres: Position of arm.
-    public boolean alignedEnoughToShoot(double currentX, double currentY, double yawInDegrees, double armAngleInDegrees, boolean isBlueAlliance) {
+    public boolean alignedEnoughToShoot(double currentX, double currentY, Rotation2d currentLimelightYaw, Rotation2d currentGyroYaw, double armAngleInDegrees, boolean isBlueAlliance) {
         double distanceInMeters = shootingDistanceInMetersToSpeaker(currentX, currentY, isBlueAlliance);
         
         // Determine if the robot is turned to an acceptable angle.
@@ -139,8 +153,9 @@ public class AutoAim implements Sendable {
         } else {
             allowedYawErrorInDegrees = 0.1;
         }
-        double desiredYawInDegrees = getDesiredYawInDegreesToSpeaker(currentX, currentY, isBlueAlliance);
-        double yawError = Math.abs(desiredYawInDegrees - yawInDegrees);
+
+        double desiredYawInDegrees = getDesiredYawInDegreesToSpeaker(currentX, currentY, currentLimelightYaw, currentGyroYaw, isBlueAlliance);
+        double yawError = Math.abs(desiredYawInDegrees - currentGyroYaw.getDegrees());
         if (yawError < allowedYawErrorInDegrees) {
             // Close enought
             m_yawAligned = true;
@@ -181,6 +196,11 @@ public class AutoAim implements Sendable {
         builder.setSmartDashboardType("AutoAim");
         builder.addBooleanProperty("yawGood", this::dashboardYawIsAligned, null);
         builder.addBooleanProperty("pitchGood", this::dashboardPitchIsAligned, null);
+        builder.addDoubleProperty("deltaX", this::dashboardDeltaX, null);
+        builder.addDoubleProperty("deltaY", this::dashboardDeltaY, null);
+        builder.addDoubleProperty("targetYaw", this::dashboardTargetYaw, null);
+        builder.addDoubleProperty("errorYaw", this::dashboardErrorYaw, null);
+        builder.addDoubleProperty("desiredYaw", this::dashboardDesiredYaw, null);
     }
 
     private boolean dashboardYawIsAligned() {
@@ -190,4 +210,25 @@ public class AutoAim implements Sendable {
     private boolean dashboardPitchIsAligned() {
         return m_pitchAligned;
     }
+
+    private double dashboardDeltaX() {
+        return m_debugDeltaX;
+    }
+
+    private double dashboardDeltaY() {
+        return m_debugDeltaY;
+    }
+
+    private double dashboardTargetYaw() {
+        return m_debugTargetYawInDegrees;
+    }
+
+    private double dashboardErrorYaw() {
+        return m_debugErrorYawInDegrees;
+    }
+
+    private double dashboardDesiredYaw() {
+        return m_debugDesiredYawInDegrees;
+    }
+
 }
