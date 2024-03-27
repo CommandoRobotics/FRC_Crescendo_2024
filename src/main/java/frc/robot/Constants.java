@@ -30,7 +30,7 @@ public final class Constants {
     public static final double kSourceAngle = 65; // TODO: Tune this angle. The angle when intaking from the source.
     public static final boolean kLeftArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
     public static final boolean kRightArmReversed = true; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
-    public static final double kLeftArmEncoderOffsetInRotations = .321; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
+    public static final double kLeftArmEncoderOffsetInRotations = .3279; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
     public static final double kRightArmEncoderOffsetInRotations = 0.831; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
     public static final int kRioDIOPortLeftEncoder = 0;
     public static final int kRioDIOPortRightEncoder = 1;

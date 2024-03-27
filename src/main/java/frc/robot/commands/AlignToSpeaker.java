@@ -27,7 +27,8 @@ public class AlignToSpeaker extends Command {
   Positioning thePositioning;
   double lastGoodDesiredYawInDegrees;
 
-  /** Creates a new RadiallyGoToAngle. */
+  //TODO Doesn't quite get to the perfect angle
+  /** Creates a new AlignToSpeaker. */
   public AlignToSpeaker(double angle, DoubleSupplier xSpeed, DoubleSupplier ySpeed, Positioning thePositioning, AutoAim autoAim, SwerveSubsystem swerveSubsystem) {
     // Use addRequirements() here to declare subsystem dependencies.
     this.swerveSubsystem = swerveSubsystem;
@@ -71,7 +72,7 @@ public class AlignToSpeaker extends Command {
         double headingX = desiredHeading.getSin();
         double headingY = desiredHeading.getCos();
         swerveSubsystem.drive(xSpeed, ySpeed, () -> headingX, () -> headingY);
-        final double toleranceInDegrees = 1;
+        final double toleranceInDegrees = 0.5;
         if (swerveSubsystem.getPose().getRotation().getDegrees() > lastGoodDesiredYawInDegrees - toleranceInDegrees && swerveSubsystem.getPose().getRotation().getDegrees() < lastGoodDesiredYawInDegrees + toleranceInDegrees) {
           isFinished = true;
         }

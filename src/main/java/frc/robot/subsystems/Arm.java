@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.units.Units;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -70,8 +71,8 @@ public class Arm extends SubsystemBase {
     private final Rotation2d m_rightEncoderOffset = Rotation2d.fromRotations(ArmConstants.kRightArmEncoderOffsetInRotations);
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
     double armG = .33;
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, .75, .3, 0.0); //was .33
-    private final PIDController m_armPID = new PIDController(11, 0, .8); // TODO: Tune this PID
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, .75, .2, 0.0); //ks0.0, kg.75, kv.3, ka0.0
+    private final PIDController m_armPID = new PIDController(9, 0, 0); //p11, i0, d8
     // Added two limit switches DI
     private DigitalInput m_upLimitSwitch;
     private DigitalInput m_downLimitSwitch;
@@ -104,6 +105,10 @@ public class Arm extends SubsystemBase {
         m_rightMotor.setInverted(true);
         m_leftHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortLeftEncoder); // Connected to this RoboRio DIO port.
         m_rightHexBoreEncoder = new DutyCycleEncoder(ArmConstants.kRioDIOPortRightEncoder); // Connected to this RoboRio DIO port.
+        m_rightHexBoreEncoder.setPositionOffset(ArmConstants.kRightArmEncoderOffsetInRotations);
+        m_leftHexBoreEncoder.setPositionOffset(ArmConstants.kLeftArmEncoderOffsetInRotations);
+
+
         m_desiredAngle = Rotation2d.fromDegrees(0.0);
         m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
         m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
@@ -327,14 +332,14 @@ public class Arm extends SubsystemBase {
     public Rotation2d getLeftPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_leftHexBoreEncoder.get());
         // Encoder offset was set in the constructor.
-        return getAdjustedPosition(measuredAngle, Rotation2d.fromRotations(Constants.ArmConstants.kLeftArmEncoderOffsetInRotations), ArmConstants.kLeftArmReversed);
+        return measuredAngle;
     }
 
     // Returns the angle the right Arm is at.
     public Rotation2d getRightPosition() {
         Rotation2d measuredAngle = Rotation2d.fromRotations(m_rightHexBoreEncoder.get());
         // Encoder offset was set in the constructor.
-        return getAdjustedPosition(measuredAngle, Rotation2d.fromRotations(Constants.ArmConstants.kRightArmEncoderOffsetInRotations), ArmConstants.kRightArmReversed);
+        return measuredAngle;
     }
 
     // Determines actual angle, adjusting for the encoder's offest and whether it is reversed.
@@ -399,11 +404,9 @@ public class Arm extends SubsystemBase {
     }
 
     public Rotation2d getCurrentArmPosition() {
-        if (leftEncoderReasonable()) {
+     
             return getLeftPosition();
-        } else {
-            return getRightPosition();
-        }
+ 
     }
 
 
@@ -501,6 +504,10 @@ public class Arm extends SubsystemBase {
         // The arm is perpendicular to the Upright shoulder.
         m_armLigament.setAngle(getCurrentArmPosition().getDegrees() - 90);
         SmartDashboard.putNumber("arm angle in degrees", getCurrentArmPosition().getDegrees());
+
+        SmartDashboard.putNumber("left encoder relative rotation", m_leftHexBoreEncoder.get());
+
+
         
 
 
@@ -542,6 +549,7 @@ public class Arm extends SubsystemBase {
       builder.addBooleanProperty("rightGood", this::dashboardGetRightArmGood, null);
       builder.addBooleanProperty("hitTopLimit", this::getUpLimitSwitchPressed, null);
       builder.addBooleanProperty("hitBottomLimit", this::getDownLimitSwitchPressed, null);
+
           // This function updates the Smart Dashboard with variables so we can debug.
 
 

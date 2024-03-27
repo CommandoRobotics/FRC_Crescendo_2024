@@ -132,7 +132,7 @@ public class RobotContainer {
                                m_positioning,
                                m_autoaim,
                                swerveSubsystem
-                              ));
+                              ).repeatedly());
 
 
     driverController.b()
@@ -178,15 +178,12 @@ public class RobotContainer {
 
     // Operator A: Arm Flat 
 
-
     operatorController.x()
-      .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(0), armSubsystem)
-                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(55), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     operatorController.a()
-      .onTrue(new InstantCommand(() -> armSubsystem.setAngleInDegrees(10), armSubsystem)
-                  .andThen(new InstantCommand(() -> armSubsystem.autoControl(), armSubsystem).repeatedly()))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
 
