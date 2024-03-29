@@ -7,6 +7,11 @@ package frc.robot.subsystems;
 import java.io.File;
 import java.util.function.DoubleSupplier;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -15,6 +20,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -50,6 +56,34 @@ public class SwerveSubsystem extends SubsystemBase {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     SmartDashboard.putData(" field", swerveDrive.field);
     SmartDashboard.putNumber("Yaw Setpoint", 0);
+
+    //configure autobuilder
+    AutoBuilder.configureHolonomic(this::getPose, //robot Pose supplier
+                                   this::resetOdometry, //method to reset odometry
+                                   this::getCurrentSpeeds, //gets the current robot chassisspeeds relative to robot
+                                   this::driveRobotRelative, //drives robot robot relative via chassis speeds
+                                   new HolonomicPathFollowerConfig(
+                                        new PIDConstants(5.0, 0.0, 0.0), //translational PID constants
+                                        new PIDConstants(5.0, 0.0, 0.0), //Rotational PID constants
+                                        4.5, // max module speed m/s
+                                        0.4, //drive base radius in meters //TODO fine if this is actually true
+                                        new ReplanningConfig() //default pathplanning config
+                                   ), 
+                                   () -> {
+                                    // Boolean supplier that controls when the path will be mirrored for the red alliance
+                                    // This will flip the path being followed to the red side of the field.
+                                    // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+                      
+                                    var alliance = DriverStation.getAlliance();
+                                    if (alliance.isPresent()) {
+                                      return alliance.get() == DriverStation.Alliance.Red;
+                                    }
+                                    return false;
+                                  },
+                                  this // Reference to this subsystem to set requirements
+                          );
+
+
 
   }
 
@@ -143,11 +177,20 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.driveFieldOriented(velocity);
   }
 
+  public void driveRobotRelative(ChassisSpeeds velocity)
+  {
+    swerveDrive.drive(velocity);
+  }
+
   /**
    * Command to characterize the robot drive motors using SysId
    *
    * @return SysId Drive Command
     */
+
+
+  
+
   public Command sysIdDriveMotorCommand()
   {
     return SwerveDriveTest.generateSysIdCommand(
@@ -181,9 +224,23 @@ public class SwerveSubsystem extends SubsystemBase {
   //TODO More methods needed to help control the swerve drive.
   // This can be copied from the YAGSL examples or we can make our own ofc
 
+  //gets robots current pose 
   public Pose2d getPose() {
     return swerveDrive.getPose();
+  } 
+
+  //resets odometry to given pose //TODO change to 0,0
+  public void resetOdometry(Pose2d poseSetpoint) {
+    swerveDrive.resetOdometry(poseSetpoint);
   }
+
+  //gets the current chassis speed
+  public ChassisSpeeds getCurrentSpeeds(){
+   ChassisSpeeds currentHeading = swerveDrive.getRobotVelocity();
+   return currentHeading;
+  }
+
+//driveFieldOriented is the method for driving via chassisspeeds
 
   public Command resetGyroCommand() {
     return run(() -> resetGyro());

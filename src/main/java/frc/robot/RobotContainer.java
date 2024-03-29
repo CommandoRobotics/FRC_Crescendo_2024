@@ -7,6 +7,10 @@ package frc.robot;
 import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
+
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -39,6 +43,10 @@ public class RobotContainer {
   AutoAim m_autoaim = new AutoAim();
   Positioning m_positioning = new Positioning();
 
+
+  //Pathplanner command registrations
+  
+
   SendableChooser<Command> autoChooser = new SendableChooser<Command>();
 
   // Controllers
@@ -52,8 +60,8 @@ public class RobotContainer {
     //Start the driver camera
     CameraServer.startAutomaticCapture();
     
-  
-    
+
+
     //Default Commands
 
     //Default drive using the driver controller (field oriented)
@@ -73,8 +81,9 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
 
-    //dispenserSubsystem.setDefaultCommand(dispenserSubsystem.forceShootCommand());
 
+
+    //TODO add pathplanner auto
     SmartDashboard.putData(armSubsystem);
     SmartDashboard.putData(dispenserSubsystem);
     SmartDashboard.putData("Positioning", m_positioning);
@@ -84,7 +93,7 @@ public class RobotContainer {
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Shoots then backs up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-
+    autoChooser.addOption("pathplannertest", new PathPlannerAuto("pathplanner test"));
     SmartDashboard.putData(autoChooser);  
 
 
