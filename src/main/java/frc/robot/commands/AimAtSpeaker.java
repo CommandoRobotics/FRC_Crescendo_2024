@@ -38,9 +38,8 @@ public class  AimAtSpeaker extends ParallelCommandGroup {
         thePositioning.update();
         Pose2d currentPose = thePositioning.getPose();
 
-        // Arm
-        // double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        // addCommands(theArm.setpointCommand(() -> desiredPitch));
+        double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
+        addCommands(theArm.setpointCommand(() -> desiredPitch));
 
         // // Dispenser 
         // if (allowedToShoot.getAsBoolean()) {

@@ -43,8 +43,14 @@ public class AutoAim implements Sendable {
         m_debugErrorYawInDegrees = yawError.getDegrees();
         Rotation2d desiredYaw = targetYaw.plus(yawError);
         m_debugDesiredYawInDegrees = desiredYaw.getDegrees();
-        return desiredYaw.getDegrees();
+        if (isBlueAlliance) {
+            return 180 + desiredYaw.getDegrees();
+            
+        } else {
 
+        
+        return desiredYaw.getDegrees();
+        }
     }
 
     // This function determines what angle we should turn to if we want to "shoot" into the Amp.
@@ -92,8 +98,10 @@ public class AutoAim implements Sendable {
     // Returns the estimated shooter angle in degrees.
     public double getDesiredShooterAngleInDegrees(double currentX, double currentY, boolean isBlueAlliance){
         double displacementFromSpeaker = shootingDistanceInMetersToSpeaker(currentX, currentY, isBlueAlliance);
+        System.out.println("we are " + displacementFromSpeaker + "meters from the speaker");
         double desiredAngle = Math.atan(Constants.FieldElements.kSpeakerHeight / displacementFromSpeaker); //finds our desired angle based on the height of the speaker and our displacement from the speaker
-        return desiredAngle;
+        double desiredAngleDegrees = desiredAngle*(180/Math.PI);
+        return desiredAngleDegrees;
     }
 
     // Returns true if we are not in the opposing alliance's wing.

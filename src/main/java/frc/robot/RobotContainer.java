@@ -8,12 +8,8 @@ import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,12 +20,7 @@ import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Dispenser;
 import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
-import frc.robot.commands.AimAtSpeaker;
-import frc.robot.commands.AimingCommand;
 import frc.robot.commands.AlignToSpeaker;
-import frc.robot.commands.FeedingCommand;
-import frc.robot.commands.GoToYawSetpoint;
-import frc.robot.commands.IntakingCommand;
 import frc.robot.commands.LeftAimAndShootAuto;
 import frc.robot.commands.RadiallyGoToAngle;
 import frc.robot.commands.RightAimAndShootAuto;
@@ -72,16 +63,11 @@ public class RobotContainer {
                                    () -> -MathUtil.applyDeadband(driverController.getRightX(), 0.1),
                                    true));
 
-    //Spin the shooter wheels (ALWAYS :D) 
-    //dispenserSubsystem.setDefaultCommand(dispenserSubsystem.spinCommand());
-    
-    //Manual control of all motors in the dispenser - operator right stick y EMERGENCY ONLY
-    //dispenserSubsystem.setDefaultCommand((new InstantCommand(() -> dispenserSubsystem.setDispenser(operatorController.getLeftY()), dispenserSubsystem).repeatedly()));
-    
+  
     //Manual control of the arm - operator left stick Y
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
-
+    //Manual control of the shooter
     dispenserSubsystem.setDefaultCommand(dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()));
 
     // Configure the trigger bindings
@@ -131,7 +117,8 @@ public class RobotContainer {
                                () -> -driverController.getLeftX(),
                                m_positioning,
                                m_autoaim,
-                               swerveSubsystem
+                               swerveSubsystem,
+                               armSubsystem
                               ).repeatedly());
 
 
@@ -154,6 +141,16 @@ public class RobotContainer {
     driverController.start()
       .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
 
+    // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
+    driverController.leftTrigger(0.1)
+      .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
+    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
+    driverController.rightTrigger(0.1)
+      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
+
     
 
     //driver intake
@@ -173,7 +170,7 @@ public class RobotContainer {
 
 
 
-    // Arm Controller
+    // 125 inches
 
 
     // Operator A: Arm Flat 

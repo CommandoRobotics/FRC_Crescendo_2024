@@ -185,7 +185,7 @@ public class Dispenser extends SubsystemBase {
    
     // Return true if the Shooter beam brake sensor sees a note.
     boolean shooterDetectsNote() {
-        boolean detecterSeesLight = m_shooterBeamBreak.get();
+        boolean detecterSeesLight = !m_shooterBeamBreak.get();
         return detecterSeesLight;
     }
 
@@ -224,9 +224,11 @@ public class Dispenser extends SubsystemBase {
     // When we have a note stored, it turns off the intake motors so we do not accidently
     // intake another Note.
     public void autoIntake() {
-      if (indexerDetectsNote() && !intakeDetectsNote()) {
-        m_intakeMotor.set(-0.1);
-    } else if (indexerDetectsNote()) {
+      if (indexerDetectsNote() && !intakeDetectsNote() ) {
+        m_intakeMotor.set(-0.2);
+    } else if ((shooterDetectsNote() && indexerDetectsNote()) || shooterDetectsNote()) {
+        ejectNote();
+    } else if (indexerDetectsNote() && !shooterDetectsNote()) {
         // Note is in indexer.
         m_intakeMotor.set(0);
     }  else {
@@ -241,6 +243,12 @@ public class Dispenser extends SubsystemBase {
         m_intakeMotor.set(-0.4);
         uppershooterMotor.set(-0.4);
         lowershooterMotor.set(-0.4);
+    }
+
+    public void ejectNoteSlow() {
+        m_intakeMotor.set(-0.1);
+        uppershooterMotor.set(-0.1);
+        lowershooterMotor.set(-0.1);
     }
 
     // This function runs all the motors in reverse if there is a Note anywhere in the dispenser. When there are no notes in the dispenser, it turns off the intake and resumes spinning up the shooter motors.
