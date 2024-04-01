@@ -42,13 +42,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Creates a new SwerveSubsystem. */
   public SwerveSubsystem() {
-    // SwerveDriveKinematics driveKinematics = new SwerveDriveKinematics(Translation2d moduleTranslations);
-    // SwerveDriveOdometry odometry = new SwerveDriveOdometry(SwerveDriveKinematics driveKinematics , getYaw(), null);
+   
     //Create the drive by parsing the JSON files in main/deploy/swerve
     try {
       swerveDrive = new SwerveParser(new File(Filesystem.getDeployDirectory(), "swerve")).createSwerveDrive(maximumSpeed);
     } catch (Exception e) {
-      //L + Ratio
       System.out.println("Failed to load the YAGSL swerve directory");
     }
 
@@ -63,8 +61,8 @@ public class SwerveSubsystem extends SubsystemBase {
                                    this::getCurrentSpeeds, //gets the current robot chassisspeeds relative to robot
                                    this::driveRobotRelative, //drives robot robot relative via chassis speeds
                                    new HolonomicPathFollowerConfig(
-                                        new PIDConstants(5.0, 0.0, 0.0), //translational PID constants
-                                        new PIDConstants(5.0, 0.0, 0.0), //Rotational PID constants
+                                        new PIDConstants(0.0020645, 0.0, 0.0), //translational PID constants
+                                        new PIDConstants(0.01, 0.0, 0.0), //Rotational PID constants
                                         4.5, // max module speed m/s
                                         0.4, //drive base radius in meters //TODO fine if this is actually true
                                         new ReplanningConfig() //default pathplanning config
@@ -240,8 +238,7 @@ public class SwerveSubsystem extends SubsystemBase {
    return currentHeading;
   }
 
-//driveFieldOriented is the method for driving via chassisspeeds
-
+  //resets navx to zero
   public Command resetGyroCommand() {
     return run(() -> resetGyro());
   }
@@ -250,18 +247,20 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.setGyro(new Rotation3d(0, 0, 0));
   }
 
+  //sets gyro to specific setpoint
   public void setGyro(double gyroSetpoint){
     swerveDrive.setGyro(new Rotation3d(0, 0, new Rotation2d(gyroSetpoint).getRadians()));
   }
 
+  //gets the current yaw of the robot
   public Rotation2d getYaw() {
     return Rotation2d.fromRadians(swerveDrive.getGyro().getRotation3d().getZ());
   }
 
-
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    //gets how far the swerve has driven
     SmartDashboard.putNumber("Swerve Distance", swerveDrive.getModules()[0].getDriveMotor().getPosition());
 
   }

@@ -3,8 +3,12 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot;
+import java.util.TreeMap;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.Projectile.Range;
+import frc.robot.Projectile.Vector;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -16,6 +20,23 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public final class Constants {
 
+  //tree map to tune shooter angle based off of distance
+  public static final TreeMap<Range, Double> angleMap = new TreeMap<Range, Double>();
+
+  //add values to the vector map
+  public static void addToVectorMap(Range range, Double angle) {
+    Constants.angleMap.put(range, angle);
+  }
+  /**
+   * Adds to the vector map based off of raw entry values
+   * @param minRange minimum range the vector applies to (meters)
+   * @param maxRange maximum range the vector applies to (meters)
+   * @param angle angle of the vector (degrees)
+   */
+  public static void addToVectorMap(double minRange, double maxRange, double angle) {
+    Constants.angleMap.put(new Range(minRange, maxRange), Double.valueOf(angle));
+ } 
+
   public static class AutomationConstants {
     public static final double kAmpSpeedFactor = 0.5; // TODO: Tune this to allow easy aligning without going too slow.
     public static final double kSourceSpeedFactor = 0.25; // TODO: Tune this to allow easy alginging without going too slow.
@@ -25,11 +46,11 @@ public final class Constants {
   public static class ArmConstants {
     public static final double kMinimumAllowedAngle = 0.0;
     public static final double kMaximumAllowedAngle = 90.0;
-    public static final double kFloorIntakeAngle = 0; // TODO: Tune this angle. The angle when intaking notes from ground.
+    public static final double kFloorIntakeAngle = 0; 
     public static final double kAmpAngle = 89; // TODO: Tune this angle. The angle when placing in the amp.
     public static final double kSourceAngle = 65; // TODO: Tune this angle. The angle when intaking from the source.
-    public static final boolean kLeftArmReversed = false; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
-    public static final boolean kRightArmReversed = true; // TODO: Check this. Encoder angle should increase as arm goes up, otherwise set this true.
+    public static final boolean kLeftArmReversed = false; 
+    public static final boolean kRightArmReversed = true; 
     public static final double kLeftArmEncoderOffsetInRotations = .3279; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
     public static final double kRightArmEncoderOffsetInRotations = 0.831; // TODO: Tune this angle. This is the reading when it the arm is parallel to the floor.
     public static final int kRioDIOPortLeftEncoder = 0;
@@ -106,10 +127,10 @@ public final class Constants {
   );
 
 
-  public static final double kLimelight2MetersAboveField = 1.0; // TODO: Tune this. Distance above field to center of camera lens (meters).
-  public static final double kLimelight2MetersFromRobotCenterX = 0.1; // TODO: Tune this. Left of center is positive.
-  public static final double kLimelight2MetersFromRobotCenterY = 0.1; // TODO: Tune this. Toward front of center is positve.
-  public static final double kLimelight2RotationInDegrees = 0.0; // TODO: Tune this. Rotation is COUNTER-clockwise from center of robot.
+  public static final double kLimelight2MetersAboveField = .3048; // TODO: Tune this. Distance above field to center of camera lens (meters).
+  public static final double kLimelight2MetersFromRobotCenterX = 0.2032; // TODO: Tune this. Left of center is positive.
+  public static final double kLimelight2MetersFromRobotCenterY = 0.0; // TODO: Tune this. Toward front of center is positve.
+  public static final double kLimelight2RotationInDegrees = 180; // TODO: Tune this. Rotation is COUNTER-clockwise from center of robot.
   public static final Pose2d kLimelight2Pose = new Pose2d(
     Constants.kLimelight2MetersFromRobotCenterX,
     Constants.kLimelight2MetersFromRobotCenterY,

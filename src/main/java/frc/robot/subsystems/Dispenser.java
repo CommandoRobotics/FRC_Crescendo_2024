@@ -209,6 +209,25 @@ public class Dispenser extends SubsystemBase {
     }
     }
 
+    public void calibrateRing() {
+    int i = 0;
+      if (indexerDetectsNote() && !intakeDetectsNote() ) {
+        m_intakeMotor.set(-0.2);
+         i++;
+    } else if ((shooterDetectsNote() && indexerDetectsNote()) || shooterDetectsNote()) {
+        ejectNote();
+    } else if (indexerDetectsNote() && intakeDetectsNote()) {
+        // Note is in indexer.
+        m_intakeMotor.set(0.2);
+         i++;
+    }  else if (i > 5){
+        m_intakeMotor.set(0);
+    } else {
+        // No Note yet
+        intakeNote();
+    }
+    }
+
     // This function runs the motors in reverse to get rid of a note without shooting it.
     // An example of needing this is if we accidently intake a second Note.
     public void ejectNote() {

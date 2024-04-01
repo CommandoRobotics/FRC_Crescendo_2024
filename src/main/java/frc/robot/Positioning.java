@@ -87,8 +87,8 @@ public class Positioning  extends SubsystemBase {//implements Sendable  {
     // This needs to be called periodically so the robot location is updated.
     public void update() {
         // Network tables associated with each Limelight
-        NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight");
-        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limeligh-backup");
+        NetworkTable limelightTable1 = NetworkTableInstance.getDefault().getTable("limelight"); //10.58.89.12
+        NetworkTable limelightTable2 = NetworkTableInstance.getDefault().getTable("limelight-backup"); //10.58.89.13 //TODO figure out if this typo was intentional or not
 
         // Get whether the Limelights see valid data.
         final double default_value = -1; // This value is returned if the Limelight is not connected.
@@ -161,7 +161,6 @@ public class Positioning  extends SubsystemBase {//implements Sendable  {
     private boolean trustLimelight2() {
         return limelightHasValidPose(targetValid2, biggestTag2, poseArrayCamera2[zIndex]);
     }
-
 
     // This gets Pose (location/rotation) data from the Limelight's BotPose Array
     // and returns it as a WPI Pose2D object.

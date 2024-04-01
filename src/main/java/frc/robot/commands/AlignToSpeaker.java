@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
 import frc.robot.subsystems.Arm;
@@ -65,7 +66,7 @@ public class AlignToSpeaker extends Command {
      distanceFromSpeaker = autoAim.shootingDistanceInMetersToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
       lastGoodDesiredYawInDegrees = autoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), currentPose.getRotation(), swerveSubsystem.getYaw(),  isBlueAlliance);
        desiredAngle = autoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        adjustedDesiredAngle =  desiredAngle;
+        adjustedDesiredAngle = 56 - desiredAngle;
       // YAGSL uses the X component and Y component of an angle to set the desired angle.
     }
     isFinished = false;
@@ -85,10 +86,10 @@ public class AlignToSpeaker extends Command {
           armSubsystem.setArmSetpoint(5); //12 at 2
          } 
          else if (distanceFromSpeaker > 1.65 && distanceFromSpeaker < 3.85) {
-         armSubsystem.setArmSetpoint(56 - adjustedDesiredAngle); //as of today was 56 //originally 62
+         armSubsystem.setArmSetpoint(adjustedDesiredAngle); //as of today was 56 //originally 62
          }          
          else if (distanceFromSpeaker > 3.85 && distanceFromSpeaker < 6) {
-         armSubsystem.setArmSetpoint(50 - adjustedDesiredAngle); //as of today was 56 //originally 62
+         armSubsystem.setArmSetpoint(adjustedDesiredAngle + 6); //as of today was 56 //originally 62
          } 
 
         Rotation2d desiredHeading = Rotation2d.fromDegrees(lastGoodDesiredYawInDegrees);

@@ -7,21 +7,13 @@
 // The FRC package is something the RoboRio code looks for so it can run our code.
 package frc.robot.subsystems;
 
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Voltage;
 import edu.wpi.first.math.MathUtil;
-// The imports include classes from various code libraries.
-// They contain prewritten code we can use to make our job easier.
-// The order does not affect the program, but we usually place the libraries from WPI first,
-// and the place the others in alphabetical order, just so it is easy to read and conistent.
-import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
@@ -31,27 +23,16 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.units.Units;
-
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.revrobotics.SparkMaxAlternateEncoder;
-import com.revrobotics.SparkPIDController;
-import com.revrobotics.SparkLimitSwitch;
-
 import frc.robot.Constants;
 import frc.robot.Positioning;
 import frc.robot.Constants.ArmConstants;
@@ -71,8 +52,8 @@ public class Arm extends SubsystemBase {
     private final Rotation2d m_rightEncoderOffset = Rotation2d.fromRotations(ArmConstants.kRightArmEncoderOffsetInRotations);
     private Rotation2d m_desiredAngle; // Variable to sore where the arm should move to/hold.
     double armG = .33;
-    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, .75, .2, 0.0); //ks0.0, kg.75, kv.3, ka0.0
-    private final PIDController m_armPID = new PIDController(9, 0, 0); //p11, i0, d8
+    private final ArmFeedforward m_armFeedFoward = new ArmFeedforward(0.0, .75, .2, 0.0); //was ks0.0, kg.75, kv.3, ka0.0
+    private final PIDController m_armPID = new PIDController(9, 0, 0);  // was p11, i0, d8
     // Added two limit switches DI
     private DigitalInput m_upLimitSwitch;
     private DigitalInput m_downLimitSwitch;
@@ -99,7 +80,7 @@ public class Arm extends SubsystemBase {
 
         m_leftMotor = new CANSparkMax(31, MotorType.kBrushless);
         m_leftMotor.setIdleMode(IdleMode.kBrake);
-        m_leftMotor.setInverted(false); // THIS IS SUPPOSED TO BE FALSE just making sure it doesnt invert the motor by accident
+        m_leftMotor.setInverted(false); 
         m_rightMotor = new CANSparkMax(32, MotorType.kBrushless);
         m_rightMotor.setIdleMode(IdleMode.kBrake);
         m_rightMotor.setInverted(true);
@@ -113,13 +94,10 @@ public class Arm extends SubsystemBase {
         m_upLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortUpLimitSwitch);
         m_downLimitSwitch = new DigitalInput(ArmConstants.kRioDIOPortDownLimitSwitch);
         SmartDashboard.putNumber(("Arm Voltage"), 0);
-            //SysIdRoutine routine = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism(voltage, motorLog, armSubsystem, getName()));
-       //Consumer<Measure<Voltage>> leftArmNeo = Consumer<Measure<Voltage>>.accept();
          
         m_leftMotor.setSmartCurrentLimit(40);
         m_rightMotor.setSmartCurrentLimit(40);
 
-  
         m_simulatedArm = new SingleJointedArmSim(
             DCMotor.getNEO(2),
             armReduction,
@@ -475,13 +453,7 @@ public class Arm extends SubsystemBase {
         m_debuggingLastPIDOutput = pidOutput;
 
         double totalMotorOutput = feedForwardOutput + pidOutput;
-        // Make sure we do not set the motors beyond what they can actually do.
-        //totalMotorOutput = MathUtil.clamp(totalMotorOutput, -0.5, 0.6);
-        // if (totalMotorOutput > 0 && getUpLimitSwitchPressed()) {
-        //     totalMotorOutput = 0;
-        // } else if (totalMotorOutput < 0 && getDownLimitSwitchPressed()) {
-        //     totalMotorOutput = 0;
-        // }
+      
         m_debuggingLastCommandedTotalMotorOutput = totalMotorOutput;
         setVoltage(totalMotorOutput);
         SmartDashboard.putNumber("arm pid output", pidOutput);
@@ -506,12 +478,6 @@ public class Arm extends SubsystemBase {
         SmartDashboard.putNumber("arm angle in degrees", getCurrentArmPosition().getDegrees());
 
         SmartDashboard.putNumber("left encoder relative rotation", m_leftHexBoreEncoder.get());
-
-
-        
-
-
-
 
     }
 
