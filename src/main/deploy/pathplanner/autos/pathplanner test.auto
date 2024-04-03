@@ -2,8 +2,8 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.43,
-      "y": 5.5
+      "x": 0.6149913298716719,
+      "y": 2.0118418927181914
     },
     "rotation": 0
   },
@@ -14,7 +14,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "garagepath"
+            "pathName": "straight 360"
           }
         }
       ]

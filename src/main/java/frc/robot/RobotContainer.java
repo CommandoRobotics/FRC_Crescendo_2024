@@ -8,7 +8,10 @@ import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.MathUtil;
@@ -43,7 +46,8 @@ public class RobotContainer {
   Positioning m_positioning = new Positioning();
 
 
-  //Pathplanner command registrations //TODO add these 
+
+
   
   //creates autochooser
   SendableChooser<Command> autoChooser = new SendableChooser<Command>();
@@ -58,6 +62,28 @@ public class RobotContainer {
     
     //Start the driver camera
     CameraServer.startAutomaticCapture();
+
+
+  //Pathplanner command registrations //TODO add these 
+  // Register Named Commands
+  NamedCommands.registerCommand("auto aim", new AlignToSpeaker(33,
+                                                        () -> -driverController.getLeftY(),
+                                                        () -> -driverController.getLeftX(),
+                                                        m_positioning,
+                                                        m_autoaim,
+                                                        swerveSubsystem,
+                                                        armSubsystem
+                                                        ));
+  NamedCommands.registerCommand("shoot", dispenserSubsystem.forceShootCommand());
+  NamedCommands.registerCommand("auto intake", dispenserSubsystem.autoIntakeCommand());
+  NamedCommands.registerCommand("arm down", Commands.run(() -> armSubsystem.setArmSetpoint(0), armSubsystem));  
+  NamedCommands.registerCommand("spin shooter", dispenserSubsystem.spinCommand());  
+  NamedCommands.registerCommand("stop shooter", dispenserSubsystem.stopCommand()); 
+  NamedCommands.registerCommand("stop arm", armSubsystem.stopCommand());  
+ 
+
+
+
     
     //Default Commands
 
@@ -73,7 +99,7 @@ public class RobotContainer {
     armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
     //Manual control of the shooter
-    dispenserSubsystem.setDefaultCommand(dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()));
+    dispenserSubsystem.setDefaultCommand(dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()).repeatedly());
 
     //TODO add LED default command
 
@@ -153,6 +179,20 @@ public class RobotContainer {
                                ));
 
 
+    //Drive Left DPad: S forward
+    driverController.povRight()
+      .onTrue(swerveSubsystem.sForward());
+
+    //Drive Left DPad: R forward
+    driverController.povLeft()
+      .onTrue(swerveSubsystem.rForward());
+
+    //Drive Left DPad: R forward
+    driverController.povUp()
+      .onTrue(swerveSubsystem.straightTurnPath());
+
+
+
 //Operator Controller: 
 
 //ARM SUBSYSTEM
@@ -199,7 +239,7 @@ public class RobotContainer {
       .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
       
-    //Operator y: line up ring
+    //Operator y: line up ring 
     operatorController.y()
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.calibrateRing(), dispenserSubsystem))        
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
@@ -239,5 +279,10 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
+    
   }
+
+
+
 }
+
