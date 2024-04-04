@@ -27,11 +27,13 @@ import frc.robot.subsystems.Dispenser;
 import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AlignToSpeaker;
+import frc.robot.commands.AutoAngleArm;
 import frc.robot.commands.LeftAimAndShootAuto;
 import frc.robot.commands.RadiallyGoToAngle;
 import frc.robot.commands.RightAimAndShootAuto;
 import frc.robot.commands.ScoreThenTaxi;
 import frc.robot.commands.TaxiCommand;
+import frc.robot.commands.YawToSpeaker;
 
 public class RobotContainer {
 
@@ -129,13 +131,12 @@ public class RobotContainer {
 
     //Driver A: auto aligns and aims towards speaker
     driverController.a()
-      .whileTrue(new AlignToSpeaker(33,
+      .whileTrue(new YawToSpeaker(33,
                                () -> -driverController.getLeftY(),
                                () -> -driverController.getLeftX(),
                                m_positioning,
                                m_autoaim,
-                               swerveSubsystem,
-                               armSubsystem
+                               swerveSubsystem
                               ).repeatedly());
 
      //Driver B: auto aligns and aims towards source TODO: test to see if this actually works                         
@@ -240,9 +241,13 @@ public class RobotContainer {
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
       
     //Operator y: line up ring 
-    operatorController.y()
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.calibrateRing(), dispenserSubsystem))        
-      .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
+    operatorController.y()   
+      .whileTrue(new AutoAngleArm(33,
+                    m_positioning,
+                    m_autoaim,
+                    armSubsystem
+                  ).repeatedly());
+ 
 
     // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
     operatorController.leftTrigger(0.1)
