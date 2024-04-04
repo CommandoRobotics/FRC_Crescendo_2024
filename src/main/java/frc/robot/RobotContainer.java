@@ -45,11 +45,7 @@ public class RobotContainer {
   AutoAim m_autoaim = new AutoAim();
   Positioning m_positioning = new Positioning();
 
-
-
-
-  
-  //creates autochooser
+  // Creates autochooser
   SendableChooser<Command> autoChooser = new SendableChooser<Command>();
 
   // Controllers
@@ -60,60 +56,57 @@ public class RobotContainer {
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     
-    //Start the driver camera
+    // Start the driver camera
     CameraServer.startAutomaticCapture();
 
+    // Pathplanner command registrations //TODO add these 
 
-  //Pathplanner command registrations //TODO add these 
-  // Register Named Commands
-  NamedCommands.registerCommand("auto aim", new AlignToSpeaker(33,
-                                                        () -> -driverController.getLeftY(),
-                                                        () -> -driverController.getLeftX(),
-                                                        m_positioning,
-                                                        m_autoaim,
-                                                        swerveSubsystem,
-                                                        armSubsystem
-                                                        ));
-  NamedCommands.registerCommand("shoot", dispenserSubsystem.forceShootCommand());
-  NamedCommands.registerCommand("auto intake", dispenserSubsystem.autoIntakeCommand());
-  NamedCommands.registerCommand("arm down", Commands.run(() -> armSubsystem.setArmSetpoint(0), armSubsystem));  
-  NamedCommands.registerCommand("spin shooter", dispenserSubsystem.spinCommand());  
-  NamedCommands.registerCommand("stop shooter", dispenserSubsystem.stopCommand()); 
-  NamedCommands.registerCommand("stop arm", armSubsystem.stopCommand());  
- 
+    // Register Named Commands for PathPlanner
+    NamedCommands.registerCommand("auto aim", new AlignToSpeaker(33,
+                                                          () -> -driverController.getLeftY(),
+                                                          () -> -driverController.getLeftX(),
+                                                          m_positioning,
+                                                          m_autoaim,
+                                                          swerveSubsystem,
+                                                          armSubsystem
+                                                          ));
+    NamedCommands.registerCommand("shoot", dispenserSubsystem.forceShootCommand());
+    NamedCommands.registerCommand("auto intake", dispenserSubsystem.autoIntakeCommand());
+    NamedCommands.registerCommand("arm down", Commands.run(() -> armSubsystem.setArmSetpoint(0), armSubsystem));  
+    NamedCommands.registerCommand("spin shooter", dispenserSubsystem.spinCommand());  
+    NamedCommands.registerCommand("stop shooter", dispenserSubsystem.stopCommand()); 
+    NamedCommands.registerCommand("stop arm", armSubsystem.stopCommand());  
+      
+    // Default Commands
 
-
-
-    
-    //Default Commands
-
-    //Default drive using the driver controller (field oriented)
+    // Swerve Subsystem: Default drive using the driver controller (field oriented)
     swerveSubsystem.setDefaultCommand(
       swerveSubsystem.driveCommand(() -> -MathUtil.applyDeadband(driverController.getLeftY(), 0.1),
-                                   () -> -MathUtil.applyDeadband(driverController.getLeftX(), 0.1), 
-                                   () -> -MathUtil.applyDeadband(driverController.getRightX(), 0.1),
-                                   true));
+                                  () -> -MathUtil.applyDeadband(driverController.getLeftX(), 0.1), 
+                                  () -> -MathUtil.applyDeadband(driverController.getRightX(), 0.1),
+                                  true));
 
   
-    //Manual control of the arm - operator left stick Y
-    armSubsystem.setDefaultCommand(new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
+    // ArmSubystem: Manual control of the arm - operator left stick Y
+    armSubsystem.setDefaultCommand(
+      new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
 
-    //Manual control of the shooter
-    dispenserSubsystem.setDefaultCommand(dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()).repeatedly());
+    // DispenserSubsystem: Manual control of the shooter
+    dispenserSubsystem.setDefaultCommand(
+      dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()).repeatedly());
 
     //TODO add LED default command
-
 
     // Configure the trigger bindings
     configureBindings();
 
-    //adds data from different subsystems onto smart dashboard
+    // Adds data from different subsystems onto smart dashboard
     SmartDashboard.putData(armSubsystem);
     SmartDashboard.putData(dispenserSubsystem);
     SmartDashboard.putData("Positioning", m_positioning);
     SmartDashboard.putData("AutoAim", m_autoaim); 
 
-    //adds autos to the autochooser
+    // Adds autos to the autochooser
     autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
@@ -125,34 +118,35 @@ public class RobotContainer {
 
   private void configureBindings() {
 
-    //Driver Controller
+    // Driver Controller
 
-    //Driver A: auto aligns and aims towards speaker
+    // Driver A: auto aligns and aims towards speaker
     driverController.a()
       .whileTrue(new AlignToSpeaker(33,
-                               () -> -driverController.getLeftY(),
-                               () -> -driverController.getLeftX(),
-                               m_positioning,
-                               m_autoaim,
-                               swerveSubsystem,
-                               armSubsystem
+                                () -> -driverController.getLeftY(),
+                                () -> -driverController.getLeftX(),
+                                m_positioning,
+                                m_autoaim,
+                                swerveSubsystem,
+                                armSubsystem
                               ).repeatedly());
 
-     //Driver B: auto aligns and aims towards source TODO: test to see if this actually works                         
+    // Driver B: auto aligns and aims towards source TODO: test to see if this actually works                         
     driverController.b()
       .whileTrue(new AimAtSource(armSubsystem, 
-                               dispenserSubsystem,
-                               swerveSubsystem,
-                               m_autoaim,
-                               m_positioning,
-                               () -> -driverController.getLeftY(),
-                               () -> -driverController.getLeftX(),
-                               driverController.rightTrigger()
-                               ));
-     
-    // Driver Start: Reset gyro/field oriented
-    driverController.start()
-      .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
+                                dispenserSubsystem,
+                                swerveSubsystem,
+                                m_autoaim,
+                                m_positioning,
+                                () -> -driverController.getLeftY(),
+                                () -> -driverController.getLeftX(),
+                                driverController.rightTrigger()
+                                ));
+
+    // Drive Left Bumper: auto intakes
+    driverController.leftBumper()
+      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
 
     // Driver Left Trigger: Spin up (hold to spin shooter motors set speed) //TODO DELETE THIS AT COMP THIS IS FOR TESTING ONLY
     driverController.leftTrigger(0.1)
@@ -164,46 +158,45 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
-    //Drive Left Bumper: auto intakes
-    driverController.leftBumper()
-      .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
-
-    //Driver back: go to setpoint //THIS IS ONLY FOR DEBUGGING
+    // Driver Back: go to setpoint //THIS IS ONLY FOR DEBUGGING
     driverController.back()
       .whileTrue(new RadiallyGoToAngle(33,
-                               () -> -driverController.getLeftY(),
-                               () -> -driverController.getLeftX(),
+                                () -> -driverController.getLeftY(),
+                                () -> -driverController.getLeftX(),
                                 swerveSubsystem
-                               ));
+                                ));
+
+    // Driver Start: Reset gyro/field oriented
+    driverController.start()
+      .onTrue(new InstantCommand(() -> swerveSubsystem.resetGyro()));
+
+    // // Pathplanner Testing
+    // // Drive Left DPad: S forward
+    // driverController.povRight()
+    //   .onTrue(swerveSubsystem.sForward());
+
+    // // Drive Left DPad: R forward
+    // driverController.povLeft()
+    //   .onTrue(swerveSubsystem.rForward());
+
+    // // Drive Left DPad: R forward
+    // driverController.povUp()
+    //   .onTrue(swerveSubsystem.straightTurnPath());
 
 
-    //Drive Left DPad: S forward
-    driverController.povRight()
-      .onTrue(swerveSubsystem.sForward());
-
-    //Drive Left DPad: R forward
-    driverController.povLeft()
-      .onTrue(swerveSubsystem.rForward());
-
-    //Drive Left DPad: R forward
-    driverController.povUp()
-      .onTrue(swerveSubsystem.straightTurnPath());
+    //Operator Controller: 
 
 
+  // ARMSUBSYSTEM
 
-//Operator Controller: 
-
-//ARM SUBSYSTEM
-    //Operator X: sets arm to 55 degrees
-    operatorController.x()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(55), armSubsystem))
-      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
-
-    //Operator A: sets arm to 10 degrees(using PID)
+    // Operator A: sets arm to 10 degrees(using PID)
     operatorController.a()
       .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
+      .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
+
+    // Operator X: sets arm to 55 degrees
+    operatorController.x()
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(55), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // // Operator Y: Lock arm in place //TODO make this something more useful we only used this for debugging
@@ -231,15 +224,14 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(20), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
+  //DISPENSER SUBSYSTEM
 
-//DISPENSER SUBSYSTEM
-
-     // Operator B: Eject
+    // Operator B: Eject
     operatorController.b()
       .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
       
-    //Operator y: line up ring 
+    //Operator Y: line up ring 
     operatorController.y()
       .whileTrue(new InstantCommand(() -> dispenserSubsystem.calibrateRing(), dispenserSubsystem))        
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
@@ -249,25 +241,24 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
-    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
-    operatorController.rightTrigger(0.1)
-      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
-      .onFalse(dispenserSubsystem.stopCommand());
-
     // Operator Left Bumper: Auto Intake
     operatorController.leftBumper()
       .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
+    // Operator Right Trigger: Shoot (pushes note into shooter wheels)
+    operatorController.rightTrigger(0.1)
+      .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
+      .onFalse(dispenserSubsystem.stopCommand());
   }
 
-  // gets robot position for use in simulations
+  // Gets robot position for use in simulations
   public void simulationPeriodic(double period) {
     Pose2d pose = swerveSubsystem.getPose();
     m_positioning.simulationPeriodic(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
   }
 
-  // runs continuously while robot is on
+  /** Runs continuously while robot is on */
   public void periodic() {
     m_positioning.update();
   }
@@ -279,10 +270,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
-    
   }
-
-
-
 }
 
