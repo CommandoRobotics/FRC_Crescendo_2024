@@ -282,11 +282,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void resetGyro() {
     swerveDrive.setGyro(new Rotation3d(0, 0, 0));
+    swerveDrive.resetOdometry(getPose());
   }
 
   //sets gyro to specific setpoint
   public void setGyro(double gyroSetpoint){
     swerveDrive.setGyro(new Rotation3d(0, 0, new Rotation2d(gyroSetpoint).getRadians()));
+    swerveDrive.resetOdometry(getPose());
   }
 
   /** Gets the current yaw of the robot */
