@@ -2,8 +2,8 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.6149913298716719,
-      "y": 2.0118418927181914
+      "x": 1.3125934353977478,
+      "y": 5.5182103704939935
     },
     "rotation": 0
   },
@@ -14,7 +14,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "straight 360"
+            "pathName": "straight first ring"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "top second ring"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "bottom third ring"
           }
         }
       ]

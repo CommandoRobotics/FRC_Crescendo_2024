@@ -8,11 +8,8 @@ import frc.robot.API.AutoAim;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import com.pathplanner.lib.path.PathPlannerPath;
-
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -27,14 +24,15 @@ import frc.robot.subsystems.Dispenser;
 import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AlignToSpeaker;
+import frc.robot.commands.AutoAngleArm;
 import frc.robot.commands.LeftAimAndShootAuto;
 import frc.robot.commands.RadiallyGoToAngle;
 import frc.robot.commands.RightAimAndShootAuto;
 import frc.robot.commands.ScoreThenTaxi;
 import frc.robot.commands.TaxiCommand;
+import frc.robot.commands.YawToSpeaker;
 
 public class RobotContainer {
-
 
   // Subsystems
   Arm armSubsystem = new Arm();
@@ -122,13 +120,12 @@ public class RobotContainer {
 
     // Driver A: auto aligns and aims towards speaker
     driverController.a()
-      .whileTrue(new AlignToSpeaker(33,
-                                () -> -driverController.getLeftY(),
-                                () -> -driverController.getLeftX(),
-                                m_positioning,
-                                m_autoaim,
-                                swerveSubsystem,
-                                armSubsystem
+      .whileTrue(new YawToSpeaker(33,
+                               () -> -driverController.getLeftY(),
+                               () -> -driverController.getLeftX(),
+                               m_positioning,
+                               m_autoaim,
+                               swerveSubsystem
                               ).repeatedly());
 
     // Driver B: auto aligns and aims towards source TODO: test to see if this actually works                         
@@ -231,11 +228,14 @@ public class RobotContainer {
       .onTrue(Commands.run(() -> dispenserSubsystem.ejectNote(), dispenserSubsystem))        
       .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
       
-    //Operator Y: line up ring 
-    operatorController.y()
-      .whileTrue(new InstantCommand(() -> dispenserSubsystem.calibrateRing(), dispenserSubsystem))        
-      .onFalse(new InstantCommand(() -> dispenserSubsystem.stop(), dispenserSubsystem));
-
+    //Operator y: line up ring 
+    operatorController.y()   
+      .whileTrue(new AutoAngleArm(33,
+                    m_positioning,
+                    m_autoaim,
+                    armSubsystem
+                  ).repeatedly());
+ 
     // Operator Left Trigger: Spin up (hold to spin shooter motors set speed)
     operatorController.leftTrigger(0.1)
       .whileTrue(Commands.run(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem))
