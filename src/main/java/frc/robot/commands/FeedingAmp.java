@@ -11,8 +11,8 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.math.geometry.Rotation2d;
 
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Dispenser;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.API.AutoAim;
 import frc.robot.Constants.AutomationConstants;
@@ -23,7 +23,7 @@ import frc.robot.Constants.AutomationConstants;
 public class FeedingAmp extends ParallelCommandGroup {
     
     // This is the constructor, it stores references to the subsystems we will use.
-    public FeedingAmp(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot, boolean isBlueAlliance) {
+    public FeedingAmp(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot, boolean isBlueAlliance) {
         // Arm
         addCommands(theArm.adjustTowardAmpCommand());
 

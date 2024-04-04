@@ -5,6 +5,7 @@
 package frc.robot;
 
 import frc.robot.API.AutoAim;
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 
@@ -19,8 +20,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Dispenser;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AlignToSpeaker;
@@ -35,8 +36,8 @@ import frc.robot.commands.YawToSpeaker;
 public class RobotContainer {
 
   // Subsystems
-  Arm armSubsystem = new Arm();
-  Dispenser dispenserSubsystem = new Dispenser();
+  ArmSubsystem armSubsystem = new ArmSubsystem();
+  DispenserSubsystem dispenserSubsystem = new DispenserSubsystem();
   SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
 
   // Other Utilities
@@ -87,11 +88,14 @@ public class RobotContainer {
   
     // ArmSubystem: Manual control of the arm - operator left stick Y
     armSubsystem.setDefaultCommand(
-      new InstantCommand(() -> armSubsystem.manuallyPowerArmRestrained(-operatorController.getLeftY()), armSubsystem).repeatedly());
+      new InstantCommand(
+        () -> armSubsystem.manuallyPowerArmRestrained(MathUtil.applyDeadband(-operatorController.getLeftY(), 0.1)),
+        armSubsystem).repeatedly());
 
     // DispenserSubsystem: Manual control of the shooter
     dispenserSubsystem.setDefaultCommand(
-      dispenserSubsystem.manualShootCommand(() -> -operatorController.getRightY()).repeatedly());
+      dispenserSubsystem.manualShootCommand(
+        () -> MathUtil.applyDeadband(-operatorController.getRightY(), 0.1)).repeatedly());
 
     //TODO add LED default command
 

@@ -16,13 +16,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
-import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class YawToSpeaker extends Command {
 
   SwerveSubsystem swerveSubsystem;
-  Arm armSubsystem;
+  ArmSubsystem armSubsystem;
   boolean isFinished = false;
   DoubleSupplier xSpeed, ySpeed;
   double angle;

@@ -18,8 +18,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -108,20 +106,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                                       swerveDrive.getYaw().getRadians(),
                                                                       swerveDrive.getMaximumVelocity()));
     });
-  } 
-
-  public void drive(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
-                              DoubleSupplier headingY) 
-  {
-      double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth controll out
-      double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth controll out
-      // Make the robot move
-      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(xInput, yInput,
-                                                                      headingX.getAsDouble(),
-                                                                      headingY.getAsDouble(),
-                                                                      swerveDrive.getYaw().getRadians(),
-                                                                      swerveDrive.getMaximumVelocity()));
-  } 
+  }
 
   /**
    * Command to drive the robot using translative values and heading as angular velocity.
@@ -165,7 +150,30 @@ public class SwerveSubsystem extends SubsystemBase {
                         false);
     });
   }
-    public Command straightTurnPath() {
+
+  /**
+   * Method to drive the robot using translative values and heading as a setpoint.
+   *
+   * @param translationX Translation in the X direction.
+   * @param translationY Translation in the Y direction.
+   * @param headingX     Heading X to calculate angle of the joystick.
+   * @param headingY     Heading Y to calculate angle of the joystick.
+   */
+  public void drive(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
+                              DoubleSupplier headingY) 
+  {
+      double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth controll out
+      double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth controll out
+      // Make the robot move
+      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(xInput, yInput,
+                                                                      headingX.getAsDouble(),
+                                                                      headingY.getAsDouble(),
+                                                                      swerveDrive.getYaw().getRadians(),
+                                                                      swerveDrive.getMaximumVelocity()));
+  }   
+  
+  // Test paths
+  public Command straightTurnPath() {
     // Load the path you want to follow using its name in the GUI
     PathPlannerPath path = PathPlannerPath.fromPathFile("straight 360");
     resetOdometry(path.getPreviewStartingHolonomicPose());
@@ -174,8 +182,7 @@ public class SwerveSubsystem extends SubsystemBase {
     return AutoBuilder.followPath(path);
   }
 
-  
-    public Command rForward() {
+  public Command rForward() {
     // Load the path you want to follow using its name in the GUI
     PathPlannerPath path = PathPlannerPath.fromPathFile("R forward");
     resetOdometry(path.getPreviewStartingHolonomicPose());
@@ -183,10 +190,8 @@ public class SwerveSubsystem extends SubsystemBase {
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return AutoBuilder.followPath(path);
   }
-
-
-    
-    public Command sForward() {
+ 
+  public Command sForward() {
     // Load the path you want to follow using its name in the GUI
     PathPlannerPath path = PathPlannerPath.fromPathFile("S forward");
     resetOdometry(path.getPreviewStartingHolonomicPose());
@@ -194,6 +199,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return AutoBuilder.followPath(path);
   }
+
   /**
    * Drive the robot given a chassis field oriented velocity.
    *
@@ -204,6 +210,11 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.driveFieldOriented(velocity);
   }
 
+  /**
+   * Drive the robot given a ChassisSpeed robot relative velocity.
+   *
+   * @param velocity Velocity according to the field.
+   */
   public void driveRobotRelative(ChassisSpeeds velocity)
   {
     swerveDrive.drive(velocity);
@@ -213,11 +224,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * Command to characterize the robot drive motors using SysId
    *
    * @return SysId Drive Command
-    */
-
-
-  
-
+  */
   public Command sysIdDriveMotorCommand()
   {
     return SwerveDriveTest.generateSysIdCommand(
@@ -243,6 +250,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Returns the distance the swerve has driven in inches
+   * ONLY RETURNS THE DISTANCE OF ONE MODULE
    */
   public double getDistance() {
     return Units.metersToInches(swerveDrive.getModules()[0].getDriveMotor().getPosition());
@@ -251,23 +259,23 @@ public class SwerveSubsystem extends SubsystemBase {
   //TODO More methods needed to help control the swerve drive.
   // This can be copied from the YAGSL examples or we can make our own ofc
 
-  //gets robots current pose 
+  /** Gets robots current pose */
   public Pose2d getPose() {
     return swerveDrive.getPose();
   } 
 
-  //resets odometry to given pose //TODO change to 0,0
+  /** Resets odometry to given pose */ //TODO change to 0,0
   public void resetOdometry(Pose2d poseSetpoint) {
     swerveDrive.resetOdometry(poseSetpoint);
   }
 
-  //gets the current chassis speed
-  public ChassisSpeeds getCurrentSpeeds(){
+  /** Gets the current chassis speed */
+   public ChassisSpeeds getCurrentSpeeds(){
    ChassisSpeeds currentHeading = swerveDrive.getRobotVelocity();
    return currentHeading;
   }
 
-  //resets navx to zero
+  /** Resets navx to zero */
   public Command resetGyroCommand() {
     return run(() -> resetGyro());
   }
@@ -281,20 +289,14 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.setGyro(new Rotation3d(0, 0, new Rotation2d(gyroSetpoint).getRadians()));
   }
 
-  //gets the current yaw of the robot
+  /** Gets the current yaw of the robot */
   public Rotation2d getYaw() {
     return Rotation2d.fromRadians(swerveDrive.getGyro().getRotation3d().getZ());
   }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-    //gets how far the swerve has driven
+    // Displays how far the swerve has driven
     SmartDashboard.putNumber("Swerve Distance", swerveDrive.getModules()[0].getDriveMotor().getPosition());
-
   }
-
-
-  
-
 }

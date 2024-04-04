@@ -7,8 +7,8 @@ package frc.robot.commands;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Dispenser;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 /*
@@ -16,7 +16,7 @@ import frc.robot.subsystems.SwerveSubsystem;
  */
 public class IntakingCommand extends ParallelCommandGroup {
 
-    public IntakingCommand(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier yawSpeed) {
+    public IntakingCommand(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier yawSpeed) {
         addCommands(
             // Set the arm down (flat, 0 degrees)
             theArm.adjustTowardFloorCommand(),

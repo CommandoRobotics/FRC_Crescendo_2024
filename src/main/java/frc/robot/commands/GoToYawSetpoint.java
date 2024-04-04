@@ -18,8 +18,8 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants.AutomationConstants;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Dispenser;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 /*
@@ -27,7 +27,7 @@ import frc.robot.subsystems.SwerveSubsystem;
  */
 public class  GoToYawSetpoint extends ParallelCommandGroup {
 
-    public GoToYawSetpoint(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
+    public GoToYawSetpoint(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
         // Determine which alliance we are, so we know where our own Speaker is.
         boolean isBlueAlliance = true;
         Optional<Alliance> ally = DriverStation.getAlliance();

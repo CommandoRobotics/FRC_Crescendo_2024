@@ -13,15 +13,15 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation;
 
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Dispenser;
+import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
 
 public class FeedingCommand extends ParallelCommandGroup {    
     // This is the constructor, it stores references to the subsystems we will use.
-    public FeedingCommand(Arm theArm, Dispenser theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
+    public FeedingCommand(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
         // Determine which alliance we are, so we know where our own Amp/Source are.
         boolean isBlueAlliance = true;
         Optional<Alliance> ally = DriverStation.getAlliance();

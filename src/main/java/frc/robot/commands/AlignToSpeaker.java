@@ -16,13 +16,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
-import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class AlignToSpeaker extends Command {
 
   SwerveSubsystem swerveSubsystem;
-  Arm armSubsystem;
+  ArmSubsystem armSubsystem;
   boolean isFinished = false;
   DoubleSupplier xSpeed, ySpeed;
   double angle;
@@ -35,7 +35,7 @@ public class AlignToSpeaker extends Command {
 
   //TODO Doesn't quite get to the perfect angle
   /** Creates a new AlignToSpeaker. */
-  public AlignToSpeaker(double angle, DoubleSupplier xSpeed, DoubleSupplier ySpeed, Positioning thePositioning, AutoAim autoAim, SwerveSubsystem swerveSubsystem, Arm armSubsystem) {
+  public AlignToSpeaker(double angle, DoubleSupplier xSpeed, DoubleSupplier ySpeed, Positioning thePositioning, AutoAim autoAim, SwerveSubsystem swerveSubsystem, ArmSubsystem armSubsystem) {
     // Use addRequirements() here to declare subsystem dependencies.
     this.swerveSubsystem = swerveSubsystem;
     this.thePositioning = thePositioning;

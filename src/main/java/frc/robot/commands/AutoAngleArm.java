@@ -11,12 +11,12 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
-import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class AutoAngleArm extends Command {
 
-  Arm armSubsystem;
+  ArmSubsystem armSubsystem;
   boolean isFinished = false;
   double angle;
   AutoAim autoAim;
@@ -27,7 +27,7 @@ public class AutoAngleArm extends Command {
 
   //TODO Doesn't quite get to the perfect angle
   /** Creates a new AlignToSpeaker. */
-  public AutoAngleArm(double angle, Positioning thePositioning, AutoAim autoAim, Arm armSubsystem) {
+  public AutoAngleArm(double angle, Positioning thePositioning, AutoAim autoAim, ArmSubsystem armSubsystem) {
     // Use addRequirements() here to declare subsystem dependencies.
     this.thePositioning = thePositioning;
     this.autoAim = autoAim;
