@@ -122,7 +122,7 @@ public class RobotContainer {
 
     // Adds autos to the autochooser
 
-    autoChooser.setDefaultOption(" Center Shoot then taxi", new Right2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
