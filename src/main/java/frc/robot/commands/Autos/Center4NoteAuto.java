@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
@@ -19,6 +20,8 @@ import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.DispenserSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.commands.AutoAngleArm;
+import frc.robot.commands.LowerArm;
+import frc.robot.commands.RevAndShoot;
 
 
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
@@ -31,14 +34,18 @@ public class Center4NoteAuto extends SequentialCommandGroup {
   public Center4NoteAuto(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
 
     //Load all paths
-    PathPlannerPath startToCenterNote = PathPlannerPath.fromPathFile("startToCenterNote");
+    PathPlannerPath startToCenterNote = PathPlannerPath.fromPathFile("4NStartToCenterNote");
+    PathPlannerPath lineToLeftNote = PathPlannerPath.fromPathFile("4NLineToLeftNote");
+    PathPlannerPath lineToRightNote = PathPlannerPath.fromPathFile("4NLineToRightNote");
+
 
     addCommands(
 
       //Reset the robot pose to the starting pose from the first path
+      new PrintCommand("Starting Center4NoteAuto"),
       Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToCenterNote.getPreviewStartingHolonomicPose())),
 
-      //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST)
+      //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST) (can use delay instead to wait on it)
 
       //Move arm up
       new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
@@ -54,31 +61,66 @@ public class Center4NoteAuto extends SequentialCommandGroup {
 
                   //Moves arm down to 0
                   new InstantCommand(() -> armSubsystem.setArmSetpoint(0), armSubsystem).repeatedly().withTimeout(0.5),
-
-      //Revs up 
-      new InstantCommand(()-> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem).repeatedly().withTimeout(1.5),
-
-
+      
       //Shoot
-      new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(1),
-
+      new RevAndShoot(dispenserSubsystem),
 
       //Intake on and follow path
       AutoBuilder.followPath(startToCenterNote)
         .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
 
 
-      //Rev up shooter and raise arm
-      new ParallelCommandGroup(new AutoAngleArm(33,
-        positioning,
-        autoAim,
-        armSubsystem).repeatedly(),
-        new InstantCommand(()-> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem)
-        ).repeatedly().withTimeout(2.5),
+      //Rev Shooter
+      new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem),
+
+      //Raise Arm
+      //Auto angles the arm //TODO MAY BE ABLE TO CHANGE WITH SET ANGLES
+      new AutoAngleArm(33, positioning, autoAim, armSubsystem).repeatedly().withTimeout(1),
                               
 
       //Shoot
-      new InstantCommand(()-> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(2.5)
+      new InstantCommand(()-> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(1),
+      dispenserSubsystem.stopCommand(),
+
+      //END OF ONENOTE
+
+      //Lower Arm
+      new LowerArm(armSubsystem),
+
+      //Drive to second/left note
+      AutoBuilder.followPath(lineToLeftNote)
+        .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
+
+      //Rev Shooter
+      new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem),
+
+      //Raise Arm
+      //Auto angles the arm //TODO MAY BE ABLE TO CHANGE WITH SET ANGLES
+      new AutoAngleArm(33, positioning, autoAim, armSubsystem).repeatedly().withTimeout(1),
+
+      //Shoot
+      new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).withTimeout(1),
+      dispenserSubsystem.stopCommand(),
+
+      //Lower Arm
+      new LowerArm(armSubsystem),
+
+      //Path to third/right note
+      AutoBuilder.followPath(lineToRightNote)
+        .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
+
+      //Rev Shooter
+      new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem),
+
+      //Raise Arm
+      //Auto angles the arm //TODO MAY BE ABLE TO CHANGE WITH SET ANGLES
+      new AutoAngleArm(33, positioning, autoAim, armSubsystem).repeatedly().withTimeout(1),
+
+      //Shoot
+      new InstantCommand(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).withTimeout(1),
+      dispenserSubsystem.stopCommand()
+
+      //END OF AUTO
     );
     
   }

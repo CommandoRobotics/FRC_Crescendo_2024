@@ -42,8 +42,7 @@ public class LowerArm extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    //targetAngle = armSubsystem.getCurrentArmPosition().getDegrees();
-    targetAngle = 90;
+    targetAngle = armSubsystem.getCurrentArmPosition().getDegrees();
   }
 
   // Called every time the scheduler runs while the command is scheduled.

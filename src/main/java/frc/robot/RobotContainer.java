@@ -122,15 +122,16 @@ public class RobotContainer {
 
     // Adds autos to the autochooser
 
-    autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.setDefaultOption(" Center Shoot then taxi", new Right2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Shoots then backs up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("pathplannertest", new PathplannerTest(swerveSubsystem));
-    autoChooser.addOption("use this!", swerveSubsystem.sForward());
 
-    autoChooser.addOption("two note auto center", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Center 2 Note", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Center 4 Note", new Center4NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Right 2 Note", new Right2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     //autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem)); //TODO probably remove
 
 
@@ -279,8 +280,6 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
-    operatorController.rightBumper().onTrue(new LowerArm(1, armSubsystem));
-
     // Operator Right Trigger: Shoot (pushes note into shooter wheels)
     operatorController.rightTrigger(0.1)
       .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
@@ -305,7 +304,7 @@ public class RobotContainer {
     // Check if the alliance has changed (so we don't constantly set the pin)
     if (newAlliance.orElse(Alliance.Blue) != prevAlliance) {
       // Then set the pin HIGH for blue and LOW for red
-      if (newAlliance.get() == Alliance.Blue) {
+      if (newAlliance.orElse(Alliance.Blue) == Alliance.Blue) {
         ledPin.set(true);
       } else {
         ledPin.set(false);
