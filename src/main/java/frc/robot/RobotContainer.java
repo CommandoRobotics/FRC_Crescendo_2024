@@ -9,11 +9,19 @@ import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.SwerveSubsystem;
 
+import java.util.Optional;
+
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DigitalOutput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -26,7 +34,10 @@ import frc.robot.commands.AimAndShootCommand;
 import frc.robot.commands.AimAtSource;
 import frc.robot.commands.AlignToSpeaker;
 import frc.robot.commands.AutoAngleArm;
+import frc.robot.commands.GoStraight;
 import frc.robot.commands.LeftAimAndShootAuto;
+import frc.robot.commands.OneNoteAutoCenter;
+import frc.robot.commands.PathplannerTest;
 import frc.robot.commands.RadiallyGoToAngle;
 import frc.robot.commands.RightAimAndShootAuto;
 import frc.robot.commands.ScoreThenTaxi;
@@ -51,6 +62,9 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(OperatorConstants.kDriverControllerPort);
   private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
 
+  // LED Pin
+  
+
 
   /* The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -61,20 +75,24 @@ public class RobotContainer {
     // Pathplanner command registrations //TODO add these 
 
     // Register Named Commands for PathPlanner
-    NamedCommands.registerCommand("auto aim", new AlignToSpeaker(33,
-                                                          () -> -driverController.getLeftY(),
-                                                          () -> -driverController.getLeftX(),
-                                                          m_positioning,
-                                                          m_autoaim,
-                                                          swerveSubsystem,
-                                                          armSubsystem
-                                                          ));
-    NamedCommands.registerCommand("shoot", dispenserSubsystem.forceShootCommand());
-    NamedCommands.registerCommand("auto intake", dispenserSubsystem.autoIntakeCommand());
-    NamedCommands.registerCommand("arm down", Commands.run(() -> armSubsystem.setArmSetpoint(0), armSubsystem));  
-    NamedCommands.registerCommand("spin shooter", dispenserSubsystem.spinCommand());  
-    NamedCommands.registerCommand("stop shooter", dispenserSubsystem.stopCommand()); 
-    NamedCommands.registerCommand("stop arm", armSubsystem.stopCommand());  
+    // NamedCommands.registerCommand("auto aim", new AlignToSpeaker(33,
+    //                                                       () -> -driverController.getLeftY(),
+    //                                                       () -> -driverController.getLeftX(),
+    //                                                       m_positioning,
+    //                                                       m_autoaim,
+    //                                                       swerveSubsystem,
+    //                                                       armSubsystem
+    //                                                       ));
+    // NamedCommands.registerCommand("shoot", dispenserSubsystem.forceShootCommand());
+    // NamedCommands.registerCommand("auto intake", dispenserSubsystem.autoIntakeCommand());
+    // NamedCommands.registerCommand("arm down", Commands.run(() -> armSubsystem.setArmSetpoint(0), armSubsystem));  
+    // NamedCommands.registerCommand("spin shooter", dispenserSubsystem.spinCommand());  
+    // NamedCommands.registerCommand("stop shooter", dispenserSubsystem.stopCommand()); 
+    // NamedCommands.registerCommand("stop arm", armSubsystem.stopCommand());  
+    // NamedCommands.registerCommand("auto arm", new AutoAngleArm(33, m_positioning, m_autoaim, armSubsystem));  
+    // NamedCommands.registerCommand("arm up", Commands.run(() -> armSubsystem.setArmSetpoint(90), armSubsystem));  
+
+
       
     // Default Commands
 
@@ -109,12 +127,19 @@ public class RobotContainer {
     SmartDashboard.putData("AutoAim", m_autoaim); 
 
     // Adds autos to the autochooser
+
     autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
     autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Shoots then backs up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("pathplannertest", new PathPlannerAuto("pathplanner test"));
+    autoChooser.addOption("pathplannertest", new PathplannerTest(swerveSubsystem));
+    autoChooser.addOption("use this!", swerveSubsystem.sForward());
+
+    autoChooser.addOption("two note auto center", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+
+
     SmartDashboard.putData(autoChooser);  
   }
 
@@ -131,6 +156,16 @@ public class RobotContainer {
                                m_autoaim,
                                swerveSubsystem
                               ).repeatedly());
+
+
+      //  driverController.a()
+      // .whileTrue(new AlignToSpeaker(33,
+      //                          () -> -driverController.getLeftY(),
+      //                          () -> -driverController.getLeftX(),
+      //                          m_positioning,
+      //                          m_autoaim,
+      //                          swerveSubsystem, armSubsystem
+      //                         ).repeatedly());
 
     // Driver B: auto aligns and aims towards source TODO: test to see if this actually works                         
     driverController.b()
@@ -192,12 +227,12 @@ public class RobotContainer {
 
     // Operator A: sets arm to 10 degrees(using PID)
     operatorController.a()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(45), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator X: sets arm to 55 degrees
     operatorController.x()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(55), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(90), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // // Operator Y: Lock arm in place //TODO make this something more useful we only used this for debugging
@@ -207,22 +242,22 @@ public class RobotContainer {
 
     // Operator Dpad Up: Arm to 40 degrees (using PID)
     operatorController.povUp()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(40), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(15), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Down: Arm to 30 degrees (using PID)
     operatorController.povDown()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(30), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(25), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Left: Arm to amp angle (using PID) 
     operatorController.povLeft()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(Constants.ArmConstants.kAmpAngle), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(20), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
     // Operator Dpad Right: Arm to 20 degrees (using PID) 
     operatorController.povRight()
-      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(20), armSubsystem))
+      .whileTrue(Commands.run(() -> armSubsystem.setArmSetpoint(10), armSubsystem))
       .onFalse(new InstantCommand(() -> armSubsystem.stop(), armSubsystem));
 
   //DISPENSER SUBSYSTEM
@@ -264,7 +299,16 @@ public class RobotContainer {
 
   /** Runs continuously while robot is on */
   public void periodic() {
-    m_positioning.update();
+    // m_positioning.update();
+    // boolean isBlueAlliance = true;
+    // Optional<Alliance> ally = DriverStation.getAlliance();
+    // if (ally.isPr    //         isBlueAlliance = false;
+    //     }
+    // }
+
+    // if (isBlueAlliance == true) {
+    //  DigitalOutput.set(true);
+    // }
   }
 
   /**

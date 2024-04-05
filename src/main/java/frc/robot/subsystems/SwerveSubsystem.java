@@ -5,12 +5,14 @@
 package frc.robot.subsystems;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.function.DoubleSupplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -18,6 +20,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -60,8 +63,8 @@ public class SwerveSubsystem extends SubsystemBase {
                                    this::getCurrentSpeeds, //gets the current robot chassisspeeds relative to robot
                                    this::driveRobotRelative, //drives robot robot relative via chassis speeds
                                    new HolonomicPathFollowerConfig(
-                                        new PIDConstants(0.0020645, 0.0, 0.0), //translational PID constants
-                                        new PIDConstants(0.01, 0.0, 0.0), //Rotational PID constants
+                                        new PIDConstants(3, 0.0, 0.0), //translational PID constants //was 0.0020645
+                                        new PIDConstants(3, 0.0, 0.0), //Rotational PID constants //was 0.01
                                         4.5, // max module speed m/s
                                         0.4, //drive base radius in meters //TODO fine if this is actually true
                                         new ReplanningConfig() //default pathplanning config
@@ -77,11 +80,10 @@ public class SwerveSubsystem extends SubsystemBase {
                                     }
                                     return false;
                                   },
+
                                   this // Reference to this subsystem to set requirements
                           );
-
-
-
+    PathPlannerLogging.setLogActivePathCallback((poses) -> swerveDrive.field.getObject("path").setPoses(poses));
   }
 
   /**
@@ -198,6 +200,22 @@ public class SwerveSubsystem extends SubsystemBase {
 
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return AutoBuilder.followPath(path);
+
+    //AutoBuilder.followPath(PathPlannerPath.fromPathFile("name"));
+  }
+
+
+    //AutoBuilder.followPath(PathPlannerPath.fromPathFile("name"));
+  
+
+   
+  public Command oneNoteCenter() {
+    // Load the path you want to follow using its name in the GUI
+    PathPlannerPath path = PathPlannerPath.fromPathFile("straight first ring");
+    resetOdometry(path.getPreviewStartingHolonomicPose());
+
+    // Create a path following command using AutoBuilder. This will also trigger event markers.
+    return AutoBuilder.followPath(path);
   }
 
   /**
@@ -268,7 +286,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public void resetOdometry(Pose2d poseSetpoint) {
     swerveDrive.resetOdometry(poseSetpoint);
   }
-
+   
   /** Gets the current chassis speed */
    public ChassisSpeeds getCurrentSpeeds(){
    ChassisSpeeds currentHeading = swerveDrive.getRobotVelocity();
@@ -281,8 +299,9 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void resetGyro() {
-    swerveDrive.setGyro(new Rotation3d(0, 0, 0));
-    swerveDrive.resetOdometry(getPose());
+    // swerveDrive.setGyro(new Rotation3d(0, 0, 0));
+    // swerveDrive.resetOdometry(getPose());
+    swerveDrive.zeroGyro();
   }
 
   //sets gyro to specific setpoint

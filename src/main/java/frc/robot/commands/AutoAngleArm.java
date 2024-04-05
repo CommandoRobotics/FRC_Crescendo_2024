@@ -53,7 +53,7 @@ public class AutoAngleArm extends Command {
       Pose2d currentPose = thePositioning.getPose();
      distanceFromSpeaker = autoAim.shootingDistanceInMetersToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
        desiredAngle = autoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        adjustedDesiredAngle = 56 - desiredAngle;
+        adjustedDesiredAngle = 59 - desiredAngle;
       // YAGSL uses the X component and Y component of an angle to set the desired angle.
     }
     isFinished = false;

@@ -66,7 +66,7 @@ public class AlignToSpeaker extends Command {
      distanceFromSpeaker = autoAim.shootingDistanceInMetersToSpeaker(currentPose.getX(), currentPose.getY(), isBlueAlliance);
       lastGoodDesiredYawInDegrees = autoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), currentPose.getRotation(), swerveSubsystem.getYaw(),  isBlueAlliance);
        desiredAngle = autoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        adjustedDesiredAngle = 56 - desiredAngle;
+        adjustedDesiredAngle = 59 - desiredAngle; //was 56 orignallu
       // YAGSL uses the X component and Y component of an angle to set the desired angle.
     }
     isFinished = false;
