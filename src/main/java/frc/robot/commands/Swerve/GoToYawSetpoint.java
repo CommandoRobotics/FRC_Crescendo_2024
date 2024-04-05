@@ -3,7 +3,7 @@
 // Arm is targeting speaker, dispenser is waiting for trigger, yaw is targeting spaker, and
 // driver has control of X/Y.
 
-package frc.robot.commands;
+package frc.robot.commands.Swerve;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants.AutomationConstants;
 import frc.robot.Positioning;
@@ -24,9 +25,9 @@ import frc.robot.subsystems.SwerveSubsystem;
 /*
  * Command for intake mode.
  */
-public class  AimAtSpeaker extends ParallelCommandGroup {
+public class  GoToYawSetpoint extends ParallelCommandGroup {
 
-    public AimAtSpeaker(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
+    public GoToYawSetpoint(ArmSubsystem theArm, DispenserSubsystem theDispenser, SwerveSubsystem theSwerve, AutoAim theAutoAim, Positioning thePositioning, DoubleSupplier xSpeed, DoubleSupplier ySpeed, BooleanSupplier allowedToShoot) {
         // Determine which alliance we are, so we know where our own Speaker is.
         boolean isBlueAlliance = true;
         Optional<Alliance> ally = DriverStation.getAlliance();
@@ -38,8 +39,9 @@ public class  AimAtSpeaker extends ParallelCommandGroup {
         thePositioning.update();
         Pose2d currentPose = thePositioning.getPose();
 
-        double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
-        addCommands(theArm.setpointCommand(() -> desiredPitch));
+        // Arm
+        // double desiredPitch = theAutoAim.getDesiredShooterAngleInDegrees(currentPose.getX(), currentPose.getY(), isBlueAlliance);
+        // addCommands(theArm.setpointCommand(() -> desiredPitch));
 
         // // Dispenser 
         // if (allowedToShoot.getAsBoolean()) {
@@ -51,12 +53,15 @@ public class  AimAtSpeaker extends ParallelCommandGroup {
         // }
         
         // Chassis
-        double desiredYawInDegrees = theAutoAim.getDesiredYawInDegreesToSpeaker(currentPose.getX(), currentPose.getY(), currentPose.getRotation(), theSwerve.getYaw(), isBlueAlliance);
+       
+
+        double desiredYawInDegrees =  SmartDashboard.getNumber("Yaw Setpoint", 33);
         // YAGSL uses the X component and Y component of an angle to set the desired angle.
         System.out.println("Desired Yaw is " + desiredYawInDegrees + " degrees.");
+
         Rotation2d desiredHeading = Rotation2d.fromDegrees(desiredYawInDegrees);
         double headingX = desiredHeading.getSin();
         double headingY = desiredHeading.getCos();
-        addCommands(theSwerve.driveCommand(xSpeed, ySpeed, () -> headingX, () -> headingY));
+        addCommands(theSwerve.driveCommand(xSpeed, ySpeed, () -> desiredHeading.getSin(), () -> desiredHeading.getCos()));
     }
 }

@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.commands;
+package frc.robot.commands.Swerve;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -16,7 +16,7 @@ public class DriveDisCommand extends Command {
 
   /** Creates a new DriveDisCommand. */
 
-  //This is purely a command that runs as long as the distance is not met. This command stops after the said distance is traveled
+  /** @deprecated */
   public DriveDisCommand(double disInInches, SwerveSubsystem swerveSubsystem) {
     this.swerveSubsystem = swerveSubsystem;
     this.distance = disInInches;

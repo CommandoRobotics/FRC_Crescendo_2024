@@ -21,6 +21,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -30,19 +31,10 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.DispenserSubsystem;
-import frc.robot.commands.AimAndShootCommand;
-import frc.robot.commands.AimAtSource;
-import frc.robot.commands.AlignToSpeaker;
-import frc.robot.commands.AutoAngleArm;
-import frc.robot.commands.GoStraight;
-import frc.robot.commands.LeftAimAndShootAuto;
-import frc.robot.commands.OneNoteAutoCenter;
-import frc.robot.commands.PathplannerTest;
-import frc.robot.commands.RadiallyGoToAngle;
-import frc.robot.commands.RightAimAndShootAuto;
-import frc.robot.commands.ScoreThenTaxi;
-import frc.robot.commands.TaxiCommand;
-import frc.robot.commands.YawToSpeaker;
+import frc.robot.commands.*;
+import frc.robot.commands.Actions_Multiple_Subsystems.*;
+import frc.robot.commands.Autos.*;
+import frc.robot.commands.Swerve.*;;
 
 public class RobotContainer {
 
@@ -63,6 +55,8 @@ public class RobotContainer {
   private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
 
   // LED Pin
+  DigitalOutput ledPin = new DigitalOutput(5);
+  Alliance prevAlliance = Alliance.Blue;
   
 
 
@@ -137,7 +131,7 @@ public class RobotContainer {
     autoChooser.addOption("use this!", swerveSubsystem.sForward());
 
     autoChooser.addOption("two note auto center", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    //autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem)); //TODO probably remove
 
 
     SmartDashboard.putData(autoChooser);  
@@ -285,6 +279,8 @@ public class RobotContainer {
       .whileTrue(Commands.run(() -> dispenserSubsystem.autoIntake(), dispenserSubsystem))
       .onFalse(dispenserSubsystem.stopCommand());
 
+    operatorController.rightBumper().onTrue(new LowerArm(1, armSubsystem));
+
     // Operator Right Trigger: Shoot (pushes note into shooter wheels)
     operatorController.rightTrigger(0.1)
       .whileTrue(Commands.run(() -> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem))
@@ -299,16 +295,22 @@ public class RobotContainer {
 
   /** Runs continuously while robot is on */
   public void periodic() {
-    // m_positioning.update();
-    // boolean isBlueAlliance = true;
-    // Optional<Alliance> ally = DriverStation.getAlliance();
-    // if (ally.isPr    //         isBlueAlliance = false;
-    //     }
-    // }
 
-    // if (isBlueAlliance == true) {
-    //  DigitalOutput.set(true);
-    // }
+    // Update robot positioning
+    m_positioning.update();
+
+    // Update the LED pin
+    Optional<Alliance> newAlliance = DriverStation.getAlliance();
+    
+    // Check if the alliance has changed (so we don't constantly set the pin)
+    if (newAlliance.orElse(Alliance.Blue) != prevAlliance) {
+      // Then set the pin HIGH for blue and LOW for red
+      if (newAlliance.get() == Alliance.Blue) {
+        ledPin.set(true);
+      } else {
+        ledPin.set(false);
+      }
+    }
   }
 
   /**

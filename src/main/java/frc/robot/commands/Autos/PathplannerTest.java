@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.commands;
+package frc.robot.commands.Autos;
 
 import java.nio.file.Path;
 
@@ -17,19 +17,19 @@ import frc.robot.subsystems.SwerveSubsystem;
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class PathplannerTest extends SequentialCommandGroup {
-  /** Creates a new PathplannerTest. */
+  /** Use this to test any one path */
   public PathplannerTest(SwerveSubsystem swerveSubsystem) {
-    PathPlannerPath sPath, straigPath;
+    PathPlannerPath pathToTest;
 
-    sPath = PathPlannerPath.fromPathFile("S forward");
-    straigPath = PathPlannerPath.fromPathFile("straight first ring");
+    pathToTest = PathPlannerPath.fromPathFile("S forward");
+
     addRequirements(swerveSubsystem);
     addCommands(
       // Reset robot pose to start of first path
-      Commands.run(() -> swerveSubsystem.resetOdometry(straigPath.getPreviewStartingHolonomicPose())).withTimeout(1),
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(pathToTest.getPreviewStartingHolonomicPose())),
 
       // Follow S Forward
-      AutoBuilder.followPath(straigPath)
+      AutoBuilder.followPath(pathToTest)
     );
   }
 }

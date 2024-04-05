@@ -2,7 +2,7 @@
 // Feeding - Code that automatically sets robot into either Amping or Sourcing modes.
 // This exists for convenience so driver just has one button when they put the arm up.
 
-package frc.robot.commands;
+package frc.robot.commands.Actions_Multiple_Subsystems;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
