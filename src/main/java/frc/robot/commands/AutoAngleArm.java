@@ -64,8 +64,6 @@ public class AutoAngleArm extends Command {
   public void execute() {
        // System.out.println("Desired Yaw:" + lastGoodDesiredYawInDegrees + "  Current (getYaw): " + swerveSubsystem.getYaw().getDegrees() + "  Current(pose): " + swerveSubsystem.getPose().getRotation().getDegrees() + " degrees.");
         //1.358
-
-        
         // armSubsystem.setArmSetpoint(58 - adjustedDesiredAngle); //as of today was 56 //originally 62
          System.out.println("Distance from speaker:" + distanceFromSpeaker);
 
