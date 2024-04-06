@@ -11,13 +11,13 @@ public class LowerArm extends Command {
 
   ArmSubsystem armSubsystem;
   boolean isFinished = false;
-  double startAngle, targetAngle;
+  double targetAngle;
 
   //CHANGE THIS TO CHANGE THE DEFAULT LOWERING SPEED
   double rateOfChange = 1;
 
   //CHANGE THIS TO CHANGE WHAT ANGLE SHOULD BE CONSIDERED "LOWERED"
-  double loweredAngle = 3;
+  double loweredAngle = 1;
 
   /** Creates a new LowerArm. */
   public LowerArm(ArmSubsystem armSubsystem) {
@@ -43,6 +43,7 @@ public class LowerArm extends Command {
   @Override
   public void initialize() {
     targetAngle = armSubsystem.getCurrentArmPosition().getDegrees();
+    isFinished = false;
   }
 
   // Called every time the scheduler runs while the command is scheduled.

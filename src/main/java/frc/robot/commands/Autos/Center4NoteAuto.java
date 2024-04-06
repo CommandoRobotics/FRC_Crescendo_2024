@@ -35,35 +35,28 @@ public class Center4NoteAuto extends SequentialCommandGroup {
 
     //Load all paths
     PathPlannerPath startToCenterNote = PathPlannerPath.fromPathFile("4NStartToCenterNote");
-    PathPlannerPath lineToLeftNote = PathPlannerPath.fromPathFile("4NLineToLeftNote");
-    PathPlannerPath lineToRightNote = PathPlannerPath.fromPathFile("4NLineToRightNote");
+    PathPlannerPath lineToLeftNote = PathPlannerPath.fromPathFile("4NLineToTopNote");
+    PathPlannerPath lineToRightNote = PathPlannerPath.fromPathFile("4NLineToBottomNote");
 
 
     addCommands(
 
-      //Reset the robot pose to the starting pose from the first path
-      new PrintCommand("Starting Center4NoteAuto"),
-      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToCenterNote.getPreviewStartingHolonomicPose())),
+      new PrintCommand("Starting OneNoteAutoCenter"),
 
-      //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST) (can use delay instead to wait on it)
+      //Reset the robot pose to the starting pose from the first path
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToCenterNote)), // Runs if Red Alliance
+      
+      //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST)
 
       //Move arm up
       new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
 
+      //Lower arm
+      new LowerArm(armSubsystem),
 
-      //TODO might be able to replace with LowerArm
-                  //Set arm to 55
-                  new InstantCommand(() -> armSubsystem.setArmSetpoint(55), armSubsystem).repeatedly().withTimeout(0.5),
-
-                  //Moves arm down to 20
-                  new InstantCommand(() -> armSubsystem.setArmSetpoint(20), armSubsystem).repeatedly().withTimeout(0.5),
-
-
-                  //Moves arm down to 0
-                  new InstantCommand(() -> armSubsystem.setArmSetpoint(0), armSubsystem).repeatedly().withTimeout(0.5),
-      
       //Shoot
       new RevAndShoot(dispenserSubsystem),
+
 
       //Intake on and follow path
       AutoBuilder.followPath(startToCenterNote)
@@ -73,14 +66,12 @@ public class Center4NoteAuto extends SequentialCommandGroup {
       //Rev Shooter
       new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem),
 
-      //Raise Arm
       //Auto angles the arm //TODO MAY BE ABLE TO CHANGE WITH SET ANGLES
       new AutoAngleArm(33, positioning, autoAim, armSubsystem).repeatedly().withTimeout(1),
-                              
+                            
 
       //Shoot
       new InstantCommand(()-> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(1),
-      dispenserSubsystem.stopCommand(),
 
       //END OF ONENOTE
 

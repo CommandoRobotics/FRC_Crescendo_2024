@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
 import frc.robot.commands.LowerArm;
@@ -22,17 +23,18 @@ import frc.robot.subsystems.SwerveSubsystem;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class Right2NoteAuto extends SequentialCommandGroup {
+public class Bottom2NoteAuto extends SequentialCommandGroup {
   /** Creates a new Right2NoteAuto. */
-  public Right2NoteAuto(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
+  public Bottom2NoteAuto(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
 
     //Load All Paths
-    PathPlannerPath startToRightNote = PathPlannerPath.fromPathFile("R2NStartToRightNote");
+    PathPlannerPath startToLeftNote = PathPlannerPath.fromPathFile("B2NStartToBottomNote");
 
     addCommands(
       //Reset Robot Pose
       new PrintCommand("Starting Right2NoteAuto"),
-      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToRightNote.getPreviewStartingHolonomicPose())),
+      //Reset the robot pose to the starting pose from the first path
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToLeftNote)), // Runs if Red Alliance
 
       //Move arm to 90 (to clear bar)
       new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
@@ -44,11 +46,12 @@ public class Right2NoteAuto extends SequentialCommandGroup {
       new RevAndShoot(dispenserSubsystem),
 
       //Drive to right note
-      AutoBuilder.followPath(startToRightNote)
+      AutoBuilder.followPath(startToLeftNote)
         .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
 
       //Rev and shoot
-      new RevAndShoot(2, dispenserSubsystem)
+      new RevAndShoot(2, dispenserSubsystem),
+      dispenserSubsystem.stopCommand()
     );
   }
 }

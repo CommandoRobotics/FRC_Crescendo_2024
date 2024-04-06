@@ -122,16 +122,16 @@ public class RobotContainer {
 
     // Adds autos to the autochooser
 
-    autoChooser.setDefaultOption(" Center Shoot then taxi", new AimAndShootCommand(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("taxi", new TaxiCommand(swerveSubsystem));
-    autoChooser.addOption("Left Shoot then Taxi", new LeftAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("Right Shoot then Taxi", new RightAimAndShootAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("Shoots then backs up", new ScoreThenTaxi(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("pathplannertest", new PathplannerTest(swerveSubsystem));
-
-    autoChooser.addOption("Center 2 Note", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("TaxiAuto", new TaxiAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.setDefaultOption("Center 2 Note", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Center 4 Note", new Center4NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("Right 2 Note", new Right2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Top 2 Note", new Top2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("Bottom 2 Note ", new Bottom2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption("shoot then taxi top  ", new ShootOnly(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
+    autoChooser.addOption(" shoot then far bottom note  ", new FarBottomNote(swerveSubsystem, dispenserSubsystem, armSubsystem));
+
+
     //autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem)); //TODO probably remove
 
 

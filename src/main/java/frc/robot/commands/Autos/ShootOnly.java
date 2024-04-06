@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
 import frc.robot.subsystems.ArmSubsystem;
@@ -29,60 +30,37 @@ import frc.robot.commands.RevAndShoot;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class OneNoteAutoCenter extends SequentialCommandGroup {
+public class ShootOnly extends SequentialCommandGroup {
   /** Creates a new OneNoteAutoCenter. */
 
 
-  public OneNoteAutoCenter(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
+  public ShootOnly(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
 
     //Load all paths
-    PathPlannerPath startToCenterNote = PathPlannerPath.fromPathFile("oneNoteAuto");
+    PathPlannerPath driveTaxi = PathPlannerPath.fromPathFile("DriveTaxi");
 
     addCommands(
 
       new PrintCommand("Starting OneNoteAutoCenter"),
 
       //Reset the robot pose to the starting pose from the first path
-      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToCenterNote)), // Runs if Red Alliance
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(driveTaxi)), // Runs if Red Alliance
       
       //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST)
 
       //Move arm up
       new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
 
-
+      // Move arm down
       new LowerArm(armSubsystem),
-      // //TODO might be able to replace with LowerArm
-      //             //Set arm to 55
-      //             new InstantCommand(() -> armSubsystem.setArmSetpoint(55), armSubsystem).repeatedly().withTimeout(0.5),
-
-      //             //Moves arm down to 20
-      //             new InstantCommand(() -> armSubsystem.setArmSetpoint(20), armSubsystem).repeatedly().withTimeout(0.5),
 
 
-      //             //Moves arm down to 0
-      //             new InstantCommand(() -> armSubsystem.setArmSetpoint(0), armSubsystem).repeatedly().withTimeout(0.5),
 
-      //Shoot
-      new RevAndShoot(dispenserSubsystem),
+      new RevAndShoot(dispenserSubsystem).withTimeout(2),
 
+      new WaitCommand(9),
 
-      //Intake on and follow path
-      AutoBuilder.followPath(startToCenterNote)
-        .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
-
-
-      //Rev up shooter and raise arm
-      //Rev Shooter
-      new InstantCommand(() -> dispenserSubsystem.spinUpShooterWheels(), dispenserSubsystem),
-
-      //Raise Arm
-      //Auto angles the arm //TODO MAY BE ABLE TO CHANGE WITH SET ANGLES
-      new AutoAngleArm(33, positioning, autoAim, armSubsystem).repeatedly().withTimeout(1),
-                              
-
-      //Shoot
-      new InstantCommand(()-> dispenserSubsystem.shootNoteImmediately(), dispenserSubsystem).repeatedly().withTimeout(1)
+       AutoBuilder.followPath(driveTaxi)
     );
     
   }

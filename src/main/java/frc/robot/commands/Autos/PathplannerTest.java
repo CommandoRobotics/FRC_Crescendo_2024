@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -21,12 +23,13 @@ public class PathplannerTest extends SequentialCommandGroup {
   public PathplannerTest(SwerveSubsystem swerveSubsystem) {
     PathPlannerPath pathToTest;
 
-    pathToTest = PathPlannerPath.fromPathFile("S forward");
+    pathToTest = PathPlannerPath.fromPathFile("PitPath");
 
     addRequirements(swerveSubsystem);
     addCommands(
       // Reset robot pose to start of first path
-      Commands.runOnce(() -> swerveSubsystem.resetOdometry(pathToTest.getPreviewStartingHolonomicPose())),
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(pathToTest)),
+
 
       // Follow S Forward
       AutoBuilder.followPath(pathToTest)

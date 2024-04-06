@@ -15,6 +15,7 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -24,6 +25,7 @@ import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -41,6 +43,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   //Constants
   double maximumSpeed = Units.feetToMeters(4.5);
+
+ 
 
   /** Creates a new SwerveSubsystem. */
   public SwerveSubsystem() {
@@ -63,8 +67,8 @@ public class SwerveSubsystem extends SubsystemBase {
                                    this::getCurrentSpeeds, //gets the current robot chassisspeeds relative to robot
                                    this::driveRobotRelative, //drives robot robot relative via chassis speeds
                                    new HolonomicPathFollowerConfig(
-                                        new PIDConstants(3, 0.0, 0.0), //translational PID constants //was 0.0020645
-                                        new PIDConstants(3, 0.0, 0.0), //Rotational PID constants //was 0.01
+                                        new PIDConstants(4.75, 0.0, 0.0), //translational PID constants //was 0.0020645 //1
+                                        new PIDConstants(2.5, 0.0, 0.0), //Rotational PID constants //was 0.01 //2.5
                                         4.5, // max module speed m/s
                                         0.4, //drive base radius in meters //TODO fine if this is actually true
                                         new ReplanningConfig() //default pathplanning config
@@ -266,6 +270,13 @@ public class SwerveSubsystem extends SubsystemBase {
         3.0, 5.0, 3.0);
   }
 
+  public void setSwerveDriveFeedForward(double ks, double kv, double ka){
+    swerveDrive.replaceSwerveModuleFeedforward(new SimpleMotorFeedforward( ks,  kv,  ka));
+    
+  }
+
+  
+
   /**
    * Returns the distance the swerve has driven in inches
    * ONLY RETURNS THE DISTANCE OF ONE MODULE
@@ -286,7 +297,14 @@ public class SwerveSubsystem extends SubsystemBase {
   public void resetOdometry(Pose2d poseSetpoint) {
     swerveDrive.resetOdometry(poseSetpoint);
   }
-   
+
+  public void resetOdometry(PathPlannerPath path) {
+    PathPlannerPath coloredPath = (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) ?
+                                  path :
+                                  path.flipPath();
+    swerveDrive.resetOdometry(coloredPath.getPreviewStartingHolonomicPose());
+  }
+
   /** Gets the current chassis speed */
    public ChassisSpeeds getCurrentSpeeds(){
    ChassisSpeeds currentHeading = swerveDrive.getRobotVelocity();
