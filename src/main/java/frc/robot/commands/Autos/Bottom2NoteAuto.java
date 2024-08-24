@@ -9,11 +9,13 @@ import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Positioning;
 import frc.robot.API.AutoAim;
+import frc.robot.commands.AutoAngleArm;
 import frc.robot.commands.LowerArm;
 import frc.robot.commands.RevAndShoot;
 import frc.robot.subsystems.ArmSubsystem;
@@ -28,16 +30,18 @@ public class Bottom2NoteAuto extends SequentialCommandGroup {
   public Bottom2NoteAuto(ArmSubsystem armSubsystem, DispenserSubsystem dispenserSubsystem, AutoAim autoAim, Positioning positioning, SwerveSubsystem swerveSubsystem) {
 
     //Load All Paths
-    PathPlannerPath startToLeftNote = PathPlannerPath.fromPathFile("B2NStartToBottomNote");
+    PathPlannerPath startToFarBottomNote = PathPlannerPath.fromPathFile("B2NStartToFarBottomNote");
+    PathPlannerPath lineToMidBottomNote = PathPlannerPath.fromPathFile("B2NStartToMidBottomNote");
+
 
     addCommands(
       //Reset Robot Pose
-      new PrintCommand("Starting Right2NoteAuto"),
+      new PrintCommand("Starting bottom 2 note auto"),
       //Reset the robot pose to the starting pose from the first path
-      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToLeftNote)), // Runs if Red Alliance
+      Commands.runOnce(() -> swerveSubsystem.resetOdometry(startToFarBottomNote)), // Runs if Red Alliance
 
       //Move arm to 90 (to clear bar)
-      new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
+      new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(0.5),
 
       //Lower Arm
       new LowerArm(armSubsystem),
@@ -45,13 +49,23 @@ public class Bottom2NoteAuto extends SequentialCommandGroup {
       //Rev and shoot
       new RevAndShoot(dispenserSubsystem),
 
-      //Drive to right note
-      AutoBuilder.followPath(startToLeftNote)
+      //Drive to far bottom note
+      AutoBuilder.followPath(startToFarBottomNote)
         .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
 
-      //Rev and shoot
-      new RevAndShoot(2, dispenserSubsystem),
-      dispenserSubsystem.stopCommand()
+
+      //Raise arm and shoot
+      new ParallelCommandGroup( new AutoAngleArm(0, positioning, autoAim, armSubsystem),
+                                new RevAndShoot(dispenserSubsystem)).withTimeout(3),
+
+      //Drive and intake to mid bottom note
+      AutoBuilder.followPath(lineToMidBottomNote)
+        .raceWith(dispenserSubsystem.autoIntakeCommand().repeatedly()),
+
+      //Raise arm and shoot
+      new ParallelCommandGroup( new AutoAngleArm(0, positioning, autoAim, armSubsystem),
+                                new RevAndShoot(dispenserSubsystem))
+
     );
   }
 }

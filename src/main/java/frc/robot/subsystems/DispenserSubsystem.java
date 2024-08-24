@@ -7,9 +7,14 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
+
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import com.revrobotics.CANSparkMax;
@@ -32,6 +37,9 @@ public class DispenserSubsystem extends SubsystemBase {
     private DigitalInput intakeBeamBreak;
     private DigitalInput indexerBeamBreak;
     private DigitalInput shooterBeamBreak;
+
+    DigitalOutput ledPin = new DigitalOutput(5);
+    Alliance prevAlliance = Alliance.Blue;
     
 
     public DispenserSubsystem() {
@@ -61,7 +69,7 @@ public class DispenserSubsystem extends SubsystemBase {
 
     // Sets zero speed, but has motors hold position.
     public Command stopCommand() {
-        return run(() -> stop());
+        return runOnce(() -> stop());
     }
 
     //revs up the shooter 
@@ -283,9 +291,22 @@ public class DispenserSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // The arm is perpendicular to the Upright shoulder.
-        SmartDashboard.putBoolean("intake detects note", intakeDetectsNote());
-        SmartDashboard.putBoolean("indexer detects note", indexerDetectsNote());
-        SmartDashboard.putBoolean("shooter detects note", shooterDetectsNote());
+      // The arm is perpendicular to the Upright shoulder.
+      SmartDashboard.putBoolean("intake detects note", intakeDetectsNote());
+      SmartDashboard.putBoolean("indexer detects note", indexerDetectsNote());
+      SmartDashboard.putBoolean("shooter detects note", shooterDetectsNote());
+
+    // Update the LED pin
+    Optional<Alliance> newAlliance = DriverStation.getAlliance();
+    
+    // Check if the alliance has changed (so we don't constantly set the pin)
+    if (!newAlliance.orElse(Alliance.Blue).equals(prevAlliance)) {
+      // Then set the pin HIGH for blue and LOW for red
+      if (newAlliance.orElse(Alliance.Blue).equals(Alliance.Blue)) {
+        ledPin.set(true);
+      } else {
+        ledPin.set(false);
+      }
+    }
     }
 }

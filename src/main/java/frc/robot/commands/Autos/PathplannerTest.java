@@ -23,7 +23,7 @@ public class PathplannerTest extends SequentialCommandGroup {
   public PathplannerTest(SwerveSubsystem swerveSubsystem) {
     PathPlannerPath pathToTest;
 
-    pathToTest = PathPlannerPath.fromPathFile("PitPath");
+    pathToTest = PathPlannerPath.fromPathFile("RotateTest");
 
     addRequirements(swerveSubsystem);
     addCommands(

@@ -49,7 +49,7 @@ public class Center4NoteAuto extends SequentialCommandGroup {
       //TODO WE MIGHT NOT NEED TIMEOUTS FOR SETARMSETPOINT (TEST)
 
       //Move arm up
-      new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(1),
+      new InstantCommand(() -> armSubsystem.setArmSetpoint(90), armSubsystem).repeatedly().withTimeout(0.5),
 
       //Lower arm
       new LowerArm(armSubsystem),

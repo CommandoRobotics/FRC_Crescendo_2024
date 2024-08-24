@@ -14,7 +14,7 @@ public class LowerArm extends Command {
   double targetAngle;
 
   //CHANGE THIS TO CHANGE THE DEFAULT LOWERING SPEED
-  double rateOfChange = 1;
+  double rateOfChange =2;
 
   //CHANGE THIS TO CHANGE WHAT ANGLE SHOULD BE CONSIDERED "LOWERED"
   double loweredAngle = 1;

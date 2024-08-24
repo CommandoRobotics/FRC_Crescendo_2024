@@ -66,15 +66,19 @@ public class AutoAngleArm extends Command {
         //1.358
         // armSubsystem.setArmSetpoint(58 - adjustedDesiredAngle); //as of today was 56 //originally 62
          System.out.println("Distance from speaker:" + distanceFromSpeaker);
+         
 
-         if (distanceFromSpeaker < 1.65) {
-          armSubsystem.setArmSetpoint(5); //12 at 2
+         if (distanceFromSpeaker < 1) {
+          armSubsystem.setArmSetpoint(0); //12 at 2
          } 
-         else if (distanceFromSpeaker > 1.65 && distanceFromSpeaker < 3.85) {
-         armSubsystem.setArmSetpoint(adjustedDesiredAngle); //as of today was 56 //originally 62
+         else if (distanceFromSpeaker > 1 && distanceFromSpeaker < 1.4) {
+         armSubsystem.setArmSetpoint(10); //as of today was 56 //originally 62
          }          
-         else if (distanceFromSpeaker > 3.85 && distanceFromSpeaker < 6) {
-         armSubsystem.setArmSetpoint(adjustedDesiredAngle + 6); //as of today was 56 //originally 62
+         else if (distanceFromSpeaker > 1.4 && distanceFromSpeaker < 2) {
+         armSubsystem.setArmSetpoint(15); //as of today was 56 //originally 62
+         } 
+         else if (distanceFromSpeaker > 2 && distanceFromSpeaker < 2.56) {
+         armSubsystem.setArmSetpoint(20); //as of today was 56 //originally 62
          } 
 
   }

@@ -53,10 +53,6 @@ public class RobotContainer {
   // Controllers
   private final CommandXboxController driverController = new CommandXboxController(OperatorConstants.kDriverControllerPort);
   private final CommandXboxController operatorController = new CommandXboxController(OperatorConstants.kOperatorControllerPort);
-
-  // LED Pin
-  DigitalOutput ledPin = new DigitalOutput(5);
-  Alliance prevAlliance = Alliance.Blue;
   
 
 
@@ -126,10 +122,8 @@ public class RobotContainer {
     autoChooser.addOption("TaxiAuto", new TaxiAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.setDefaultOption("Center 2 Note", new OneNoteAutoCenter(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Center 4 Note", new Center4NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption("Top 2 Note", new Top2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("Bottom 2 Note ", new Bottom2NoteAuto(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
     autoChooser.addOption("shoot then taxi top  ", new ShootOnly(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem));
-    autoChooser.addOption(" shoot then far bottom note  ", new FarBottomNote(swerveSubsystem, dispenserSubsystem, armSubsystem));
 
 
     //autoChooser.addOption("go back and forth lol", new GoStraight(armSubsystem, dispenserSubsystem, m_autoaim, m_positioning, swerveSubsystem)); //TODO probably remove
@@ -297,19 +291,6 @@ public class RobotContainer {
 
     // Update robot positioning
     m_positioning.update();
-
-    // Update the LED pin
-    Optional<Alliance> newAlliance = DriverStation.getAlliance();
-    
-    // Check if the alliance has changed (so we don't constantly set the pin)
-    if (newAlliance.orElse(Alliance.Blue) != prevAlliance) {
-      // Then set the pin HIGH for blue and LOW for red
-      if (newAlliance.orElse(Alliance.Blue) == Alliance.Blue) {
-        ledPin.set(true);
-      } else {
-        ledPin.set(false);
-      }
-    }
   }
 
   /**

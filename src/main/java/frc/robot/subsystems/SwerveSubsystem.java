@@ -68,7 +68,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                    this::driveRobotRelative, //drives robot robot relative via chassis speeds
                                    new HolonomicPathFollowerConfig(
                                         new PIDConstants(4.75, 0.0, 0.0), //translational PID constants //was 0.0020645 //1
-                                        new PIDConstants(2.5, 0.0, 0.0), //Rotational PID constants //was 0.01 //2.5
+                                        new PIDConstants(2.5, 0.0, 0), //Rotational PID constants //was 0.01 //2.5
                                         4.5, // max module speed m/s
                                         0.4, //drive base radius in meters //TODO fine if this is actually true
                                         new ReplanningConfig() //default pathplanning config
